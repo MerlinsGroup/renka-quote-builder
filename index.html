@@ -221,6 +221,57 @@ table.ws .src b{color:var(--ink);font-weight:700}
 .tline input{width:104px;text-align:right;border:1px solid var(--line);border-radius:2px;padding:4px 7px;background:#fff;color:var(--ink)}
 .tline input:focus{border-color:var(--ink);outline:none}
 
+/* latest upload strip: which file the quote is built from, and when it went in */
+.upstrip{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;background:var(--ink);color:#d8d6cf;border-radius:3px;padding:11px 16px;margin-bottom:18px;font-size:13px}
+.upstrip .lab{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#a8a599}
+.upstrip b{color:#fff}
+.upstrip .when{font-variant-numeric:tabular-nums;color:#fff}
+.upstrip .ago{color:#a8a599}
+.upstrip details{margin-left:auto}
+.upstrip summary{cursor:pointer;color:#a8a599;font-size:12px}
+.upstrip ol{margin:8px 0 0;padding-left:18px;font-size:12px;color:#d8d6cf}
+.upstrip.fresh{animation:flash 1.6s}
+
+/* profit margin by product */
+.mcard{scroll-margin-top:130px}
+.mmode{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin:-4px 0 14px;font-size:13px}
+.mmode label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.mmode .hint{flex-basis:100%}
+table.mt{width:100%;border-collapse:collapse}
+table.mt th{font-size:10px;font-weight:400;text-transform:uppercase;letter-spacing:.13em;color:var(--greige);text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+table.mt td{padding:8px 6px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+table.mt td.r,table.mt th.r{text-align:right;font-variant-numeric:tabular-nums}
+table.mt td.r b{font-size:14px}
+table.mt input{width:74px;text-align:right;border:1px solid var(--line);border-radius:2px;padding:6px 7px;background:#fff;color:var(--ink)}
+table.mt input.set{background:var(--need);border-color:var(--need-line)}
+table.mt .q{display:inline-flex;gap:4px;margin-left:6px}
+table.mt .q button{border:1px solid var(--line);background:#fff;border-radius:2px;padding:4px 8px;font-size:12px}
+table.mt .q button:hover,table.mt .q button.on{border-color:var(--ink);background:var(--ink);color:#fff}
+table.mt .both{display:block;font-size:11.5px;color:var(--greige);margin-top:3px}
+table.mt .both b{font-weight:700;color:var(--soft)}
+
+/* Excel viewer: the workbook as it downloads, drawn as a grid */
+.xlv{background:var(--card);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.xlv__msg{padding:40px;text-align:center;color:var(--greige)}
+.xlv__tabs{display:flex;gap:0;border-top:1px solid var(--line);background:var(--wash);overflow-x:auto}
+.xlv__tabs button{appearance:none;border:0;border-right:1px solid var(--line);background:none;padding:8px 16px;font-size:12.5px;color:var(--greige);white-space:nowrap}
+.xlv__tabs button.on{background:#fff;color:var(--ink);font-weight:700;box-shadow:inset 0 2px 0 var(--ink)}
+.xlv__bar{display:flex;align-items:center;gap:10px;padding:6px 10px;border-bottom:1px solid var(--line);font-size:12.5px;background:#fff}
+.xlv__bar .ref{min-width:64px;padding:3px 8px;border:1px solid var(--line);border-radius:2px;font-variant-numeric:tabular-nums;color:var(--ink);text-align:center}
+.xlv__bar .fx{flex:1;min-width:0;padding:3px 8px;border:1px solid var(--line);border-radius:2px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Consolas,monospace;font-size:12px}
+.xlv__scroll{overflow:auto;max-height:calc(100vh - 250px);position:relative}
+.xlv__grid{position:relative;font-family:Arial,sans-serif;font-size:11px;color:#000}
+.xlv__grid .h{position:absolute;background:#f3f3f2;border-right:1px solid #d6d6d3;border-bottom:1px solid #d6d6d3;color:#6f6d66;font-size:10.5px;display:flex;align-items:center;justify-content:center;z-index:3}
+.xlv__grid .h.col{top:0;height:20px}
+.xlv__grid .c{position:absolute;border-right:1px solid #e6e6e3;border-bottom:1px solid #e6e6e3;padding:1px 3px;overflow:hidden;display:flex;line-height:1.2;background:#fff;white-space:pre-wrap;word-break:break-word}
+.xlv__grid .c.edit{background:#fff7c2;cursor:text}
+.xlv__grid .c.edit:hover,.xlv__grid .c.editt:hover{outline:1px solid #b89a2a;z-index:2}
+.xlv__grid .c.editt{cursor:text}
+.xlv__grid .c.sel{outline:2px solid #1d6b3a;z-index:4}
+.xlv__grid .c[contenteditable="true"]{outline:2px solid #1d6b3a;background:#fff;z-index:5;overflow:visible;min-width:max-content}
+.xlv__grid img{position:absolute;z-index:1;pointer-events:none}
+.xlkey{background:#fff7c2;border:1px solid #d9c27a;padding:0 5px;border-radius:2px;color:var(--ink)}
+
 /* cover photo picker */
 .cover{display:flex;gap:16px;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--line-soft)}
 .cover .ph{width:150px;height:96px;border-radius:2px;border:1px solid var(--line);background:#e9e8e4 center/cover no-repeat;flex:none}
@@ -349,10 +400,13 @@ table.ws .src b{color:var(--ink);font-weight:700}
       <button data-v="work" class="on">Working sheet</button>
       <button data-v="quote">Customer quotation</button>
       <button data-v="order">Order confirmation</button>
+      <button data-v="xl" title="The Excel workbook, inside the portal. Yellow cells can be changed here, the same as in Excel.">Excel</button>
     </div>
     <span class="sp"></span>
     <div class="actions">
+      <button class="btn" id="btnNew" title="Clear this quote (client, project, lines) and start the next one">New quote</button>
       <label class="btn ghost" title="Load a Logikal estimation export (.xlsx). Loading a revised estimation updates prices and drawings but keeps your edits.">Load estimation<input type="file" id="fileInput" accept=".xlsx,.xlsm,.xls" hidden></label>
+      <label class="btn ghost" title="Upload the Excel you downloaded from here, after changing it in Excel. The quote updates to match it.">Upload edited Excel<input type="file" id="xlInput" accept=".xlsx,.xlsm" hidden></label>
       <button class="btn" id="addExtras" title="Add items that are not in the Logikal estimation">Add extras</button>
       <button class="btn" id="btnSettings">Pricing &amp; rules</button>
       <span class="div"></span>
@@ -384,6 +438,7 @@ table.ws .src b{color:var(--ink);font-weight:700}
     </ol>
   </div>
   <div id="banners"></div>
+  <div class="upstrip no-print" id="upStrip" hidden></div>
 
   <section class="view print-on" id="view-work">
     <label class="drop no-print" id="drop" for="fileInput">
@@ -411,6 +466,11 @@ table.ws .src b{color:var(--ink);font-weight:700}
       <div id="extrasTbl"></div>
     </section>
 
+    <section class="card mcard" id="marginCard">
+      <h2>Profit margin by product</h2>
+      <div id="marginBox"></div>
+    </section>
+
     <div class="totals">
       <div class="card bridge"><h2>Price build-up</h2><div id="bridgeBox"></div></div>
       <div class="card"><h2>Totals</h2><div id="totalsBox"></div></div>
@@ -420,6 +480,10 @@ table.ws .src b{color:var(--ink);font-weight:700}
 
   <section class="view" id="view-quote"><div class="prevbar no-print"><span>This screen shows the <b>Spreadsheet</b> layout. The <b>Proposal</b> PDF (cover picture, summary, frame cards) is built when you download.</span><button class="btn sm ghost" data-preview="quote">Preview Proposal PDF</button></div><div class="doc-wrap"><div class="doc" id="docQuote"></div></div></section>
   <section class="view" id="view-order"><div class="prevbar no-print"><span>This screen shows the <b>Spreadsheet</b> layout. The <b>Proposal</b> PDF (cover picture, summary, frame cards) is built when you download.</span><button class="btn sm ghost" data-preview="order">Preview Proposal PDF</button></div><div class="doc-wrap"><div class="doc" id="docOrder"></div></div></section>
+  <section class="view" id="view-xl">
+    <div class="prevbar no-print"><span>This is the <b>Excel workbook</b> exactly as it downloads. <span class="xlkey">Yellow</span> cells are yours to change: click one, type, press Enter, and the quote, totals and PDF update. Grey cells are worked out for you.</span><button class="btn sm ghost" id="xlDownload">Download this Excel</button></div>
+    <div class="xlv" id="xlView"><div class="xlv__msg">Load an estimation first.</div></div>
+  </section>
   <div class="pagefoot no-print"><span>Renka Ltd</span><span>Engineered for living, designed for life</span></div>
 </main>
 </div><!-- #app -->
@@ -674,6 +738,8 @@ const DEFAULT_SETTINGS = {
   discountLabel: 'Main contractors discount', discountPct: 0, vatPct: 20,
   dayRate: 245, surveyCost: 300, petrolCost: 0, accomCost: 0, installOverride: '', craneCost: 0, craneKg: 150,
   deliveryCost: 295, includeOptions: false, dep1: 25, dep2: 25,
+  // profit margins are typed as a %: 'markup' = cost + 70%, 'margin' = 70% of the selling price
+  marginMode: 'markup', productMargins: {},
   pdfStyle: 'proposal', pdfOrient: 'portrait', validDays: 30, coverImage: '',
   rules: DEFAULT_RULES,
   extrasPresets: [
@@ -728,6 +794,19 @@ function deriveAuto(est, S) {
     location: '', paneKg: kg, panes
   };
 }
+/* a typed profit % ↔ the price multiplier the sums use.
+   markup: 70% → cost × 1.70.   margin: 70% of the selling price → cost ÷ 0.30 = × 3.33 */
+function pctToX(pct, mode) {
+  const p = Number(pct);
+  if (!isFinite(p)) return NaN;
+  if (mode === 'margin') return p < 100 ? 1 / (1 - p / 100) : NaN;
+  return 1 + p / 100;
+}
+function xToPct(x, mode) {
+  const m = Number(x);
+  if (!isFinite(m) || m <= 0) return 0;
+  return mode === 'margin' ? (1 - 1 / m) * 100 : (m - 1) * 100;
+}
 function lineCalc(v, S) {
   const total = ((Number(v.frameCost) || 0) + (Number(v.glassCost) || 0)) * (Number(v.qty) || 1);
   const retail = v.retailOverride !== '' && v.retailOverride != null ? Number(v.retailOverride) : round2(total * (Number(v.markup) || 0));
@@ -747,7 +826,7 @@ function projectTotals(lines, S) {
   const total = round2(afterDisc + crane + install), vat = round2(total * S.vatPct / 100);
   return { frames, options, cost, manDays, framesInc, discount, afterDisc, installCalc, install, crane, total, vat, gross: round2(total + vat), margin: framesInc ? round2(afterDisc - cost) : 0 };
 }
-if (typeof module !== 'undefined') module.exports = { parseRows, parseEstimation, deriveAuto, lineCalc, projectTotals, colourFromFinish, glassSpec, DEFAULT_SETTINGS, sheetRows };
+if (typeof module !== 'undefined') module.exports = { parseRows, parseEstimation, deriveAuto, lineCalc, projectTotals, colourFromFinish, glassSpec, DEFAULT_SETTINGS, sheetRows, pctToX, xToPct };
 </script>
 
 <!-- ============ UI ============ -->
@@ -770,10 +849,15 @@ const NUMERIC = new Set(['qty', 'frameCost', 'glassCost', 'markup', 'retailOverr
 
 let S = Object.assign(clone(DEFAULT_SETTINGS), store.get('qb.settings') || {});
 if (!Array.isArray(S.rules) || !S.rules.length) S.rules = clone(DEFAULT_RULES);
+if (!S.productMargins || typeof S.productMargins !== 'object') S.productMargins = {};
+if (S.marginMode !== 'margin') S.marginMode = 'markup';
 const todayStr = () => new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+const blankProject = () => ({ client: '', projectName: '', address: '', tel: '', quoteRef: '', date: todayStr(), installDate: '', version: 'Quotation V1' });
+const newJobId = () => 'job-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
 let state = {
-  project: { client: '', projectName: '', address: '', tel: '', quoteRef: '', date: todayStr(), installDate: '', version: 'Quotation V1' },
-  est: null, rows: [], view: 'work'
+  project: blankProject(), jobId: newJobId(),
+  est: null, rows: [], view: 'work',
+  uploads: []   // every file put into this quote, newest first: { file, kind, at }
 };
 let uid = 1;
 
@@ -782,8 +866,17 @@ function makeRow(est) { return { id: uid++, source: est ? 'est' : 'manual', ref:
 function autoFor(row, idx) {
   const base = row.est ? deriveAuto(row.est, S) : { product: '', width: '', height: '', qty: 1, colour: '', config: '', trickle: 'N/A', cill: 'N/A', handle: 'N/A', glassSpec: '', additional: '', frameCost: 0, glassCost: 0, markup: S.defaultMarkup, drainCost: 0, tripleCost: 0, manDays: 0, location: '', paneKg: 0, panes: 1 };
   base.frameNo = String(idx + 1); base.retailOverride = '';
+  // a margin set for this product (e.g. sliding doors 80%) beats the rule's standard markup
+  const pm = productMarginFor('product' in row.ov ? row.ov.product : base.product);
+  if (pm != null) base.markup = pctToX(pm, S.marginMode);
   return base;
 }
+function productMarginFor(product) {
+  const m = S.productMargins || {}, p = String(product || '').trim();
+  return p && m[p] !== undefined && m[p] !== '' && isFinite(pctToX(m[p], S.marginMode)) ? Number(m[p]) : null;
+}
+const pctOf = x => Math.round(xToPct(x, S.marginMode) * 10) / 10;
+const asPct = x => x === '' || x == null || !Number(x) ? '' : pctOf(x);
 function vals(row, idx) { const a = autoFor(row, idx), v = {}; EDIT_FIELDS.forEach(k => v[k] = k in row.ov ? row.ov[k] : a[k]); v._auto = a; return v; }
 function activeRows() { return state.rows.filter(r => !r.missing); }
 function computeAll() {
@@ -801,8 +894,24 @@ async function loadEstimationFile(file) {
   if (!parsed.positions.length) { banner('warn', 'No “Position:” blocks found in “' + esc(file.name) + '”. Is this a Logikal estimation export?'); return; }
   applyEstimation(parsed, file.name);
 }
+/* Start again from nothing. Everything typed for the last job goes: client, project, lines,
+   and the job-only figures (quoted installation, crane, discount). Settings and rules stay. */
+function resetJob() {
+  state.project = blankProject(); state.jobId = newJobId();
+  state.est = null; state.rows = []; state.uploads = [];
+  S.installOverride = ''; S.craneCost = 0; S.discountPct = DEFAULT_SETTINGS.discountPct; saveSettings();
+  $('#banners').innerHTML = '';
+}
+const sameJobName = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
 function applyEstimation(parsed, fileName) {
+  // a different job's estimation is a new quote, not a revision of this one: the old names must not stick
+  if (state.rows.some(r => r.source === 'est') && state.est && parsed.project.name && state.est.project.name
+    && !sameJobName(parsed.project.name, state.est.project.name)
+    && confirm(`This estimation is for “${parsed.project.name}”, but the quote that is open is “${state.est.project.name}”.\n\nOK = start a new quote for “${parsed.project.name}”.\nCancel = treat it as a revised estimation of “${state.est.project.name}”.`)) {
+    resetJob();
+  }
   const first = !state.rows.some(r => r.source === 'est');
+  if (first) state.project.projectName = parsed.project.name || state.project.projectName;
   // a new job starts clean: a quoted installation, crane or discount belongs to the job it was typed for
   if (first) { S.installOverride = ''; S.craneCost = 0; S.discountPct = DEFAULT_SETTINGS.discountPct; saveSettings(); }
   const byRef = new Map();
@@ -833,6 +942,7 @@ function applyEstimation(parsed, fileName) {
   const noDraw = parsed.positions.filter(p => !p.drawing).length;
   if (first) banner('ok', 'Loaded ' + parsed.positions.length + ' positions from “' + esc(fileName) + '”' + (noDraw ? ' — ' + noDraw + ' without a drawing (a simple elevation is drawn instead).' : ' with all drawings.'));
   else banner('info', 'Revised estimation “' + esc(fileName) + '” applied: ' + nChg + ' position(s) changed, ' + nNew + ' new, ' + byRef.size + ' no longer in the estimation (struck through — remove or keep). Your overrides were kept.');
+  noteUpload(fileName, first ? 'Logikal estimation' : 'Revised Logikal estimation');
   render();
 }
 
@@ -878,9 +988,15 @@ const COLS = [
   ['width', 'Width', 62], ['height', 'Height', 62], ['qty', 'Qty', 44], ['colour', 'Frame colour', 160], ['config', 'Configuration', 220],
   ['trickle', 'Trickle vents', 70], ['cill', 'Cill', 90], ['handle', 'Handle / lock', 130], ['glassSpec', 'Glass spec', 110],
   ['additional', 'Additional / post survey', 200], ['_src', 'Logikal (per unit)', 150], ['frameCost', 'Frame £', 80], ['glassCost', 'Glass £', 76],
-  ['_total', 'Total cost', 86], ['markup', '×', 52], ['retailOverride', 'Retail (exc VAT)', 100], ['drainCost', 'Drain £', 70], ['tripleCost', 'Triple gl. £', 76], ['manDays', 'Man days', 60], ['_act', '', 46]
+  ['_total', 'Total cost', 86], ['markup', 'Margin %', 70], ['retailOverride', 'Retail (exc VAT)', 100], ['drainCost', 'Drain £', 70], ['tripleCost', 'Triple gl. £', 76], ['manDays', 'Man days', 60], ['_act', '', 46]
 ];
 const TA = new Set(['config', 'additional', 'colour', 'product', 'handle']);
+/* the margin is typed as a %, the sums keep the multiplier: one input used by the main table and extras */
+function marginInput(row, v, a, cls = '') {
+  const isOv = 'markup' in row.ov;
+  const title = `= ×${(Number(v.markup) || 0).toFixed(2)} on cost` + (isOv ? ` · calculated ${pctOf(a.markup)}%` : '');
+  return `<input data-f="markup" data-pct="1" class="${isOv ? 'ov ' : ''}n ${cls}" value="${pctOf(v.markup)}" title="${esc(title)}">`;
+}
 
 function renderTable() {
   const all = computeAll(), lines = all.filter(L => L.row.source === 'est');
@@ -902,6 +1018,7 @@ function renderTable() {
       }
       if (k === '_total') return `<div class="calc num">${gbp(L.total)}</div>`;
       if (k === '_act') return `<div class="acts"><button data-act="up" title="Move up">▲</button><button data-act="down" title="Move down">▼</button><button data-act="dup" title="Duplicate — same Logikal frame used for another room">⧉</button><button data-swap="${row.id}" title="Swap this Logikal line for a bought-in product (e.g. Hormann door)">⇄</button><button data-act="reset" title="Clear overrides on this row">↺</button><button data-act="del" title="Remove line">✕</button></div>`;
+      if (k === 'markup') return marginInput(row, v, a);
       const isOv = k in row.ov, val = k === 'retailOverride' ? (isOv ? v[k] : L.retail.toFixed(2)) : v[k];
       const cls = (isOv ? 'ov ' : '') + (NUMERIC.has(k) || k === 'width' || k === 'height' ? 'n' : '');
       const title = isOv && k !== 'retailOverride' ? ` title="Calculated: ${esc(a[k])}"` : k === 'retailOverride' && isOv ? ` title="Calculated: ${esc(gbp(round2(L.total * v.markup)))}"` : '';
@@ -1039,8 +1156,8 @@ function renderSettings() {
   $('#setCosts').innerHTML = f('frameUplift', 'Frame cost uplift %') + f('glassUplift', 'Glass cost uplift %') + f('roundTo', 'Round costs up to (£)') + f('defaultMarkup', 'Default markup ×') + f('extrasMarkup', 'Drain / triple markup ×') + f('craneKg', 'Crane warning above (kg/pane)');
   $('#setTotals').innerHTML = f('discountLabel', 'Discount label', 'text') + f('discountPct', 'Discount %') + f('vatPct', 'VAT %') + f('dayRate', 'Cost / man day £') + f('surveyCost', 'Survey cost £') + f('petrolCost', 'Petrol £') + f('accomCost', 'Accommodation £') + f('deliveryCost', 'Supply-only delivery £') + f('dep1', '1st deposit %') + f('dep2', '2nd deposit %') +
     `<div class="field"><label>Options in total?</label><select data-s="includeOptions"><option value="false"${!S.includeOptions ? ' selected' : ''}>No — show as options</option><option value="true"${S.includeOptions ? ' selected' : ''}>Yes — add to total</option></select></div>`;
-  const RC = [['match', 'System contains', 110], ['type', 'Type', 80], ['maxWidth', 'Max width', 64], ['product', 'Product description', 190], ['markup', '×', 50], ['cill', 'Cill', 110], ['trickle', 'Trickle', 56], ['handle', 'Handle / lock', 150], ['manDays', 'Man days', 56]];
-  $('#rulesTbl').innerHTML = `<tr>${RC.map(c => `<th style="min-width:${c[2]}px">${c[1]}</th>`).join('')}<th></th></tr>` + S.rules.map((r, i) => `<tr>${RC.map(([k]) => `<td>${k === 'type' ? `<select data-r="${i}" data-k="type">${['any', 'opening', 'fixed'].map(o => `<option${r.type === o ? ' selected' : ''}>${o}</option>`).join('')}</select>` : `<input data-r="${i}" data-k="${k}" value="${esc(r[k])}"${k === 'match' && !r.match ? ' placeholder="(anything)"' : ''}>`}</td>`).join('')}<td style="white-space:nowrap"><button class="btn sm" data-rmv="${i}" data-dir="-1">▲</button><button class="btn sm" data-rmv="${i}" data-dir="1">▼</button><button class="btn sm" data-rdel="${i}">✕</button></td></tr>`).join('');
+  const RC = [['match', 'System contains', 110], ['type', 'Type', 80], ['maxWidth', 'Max width', 64], ['product', 'Product description', 190], ['markup', 'Margin %', 64], ['cill', 'Cill', 110], ['trickle', 'Trickle', 56], ['handle', 'Handle / lock', 150], ['manDays', 'Man days', 56]];
+  $('#rulesTbl').innerHTML = `<tr>${RC.map(c => `<th style="min-width:${c[2]}px">${c[1]}</th>`).join('')}<th></th></tr>` + S.rules.map((r, i) => `<tr>${RC.map(([k]) => `<td>${k === 'type' ? `<select data-r="${i}" data-k="type">${['any', 'opening', 'fixed'].map(o => `<option${r.type === o ? ' selected' : ''}>${o}</option>`).join('')}</select>` : `<input data-r="${i}" data-k="${k}" value="${esc(k === 'markup' ? asPct(r.markup) : r[k])}"${k === 'match' && !r.match ? ' placeholder="(anything)"' : k === 'markup' ? ` placeholder="${pctOf(S.defaultMarkup)}" title="${esc(r.markup ? '= ×' + Number(r.markup).toFixed(2) + ' on cost' : 'blank = the default margin')}"` : ''}>`}</td>`).join('')}<td style="white-space:nowrap"><button class="btn sm" data-rmv="${i}" data-dir="-1">▲</button><button class="btn sm" data-rmv="${i}" data-dir="1">▼</button><button class="btn sm" data-rdel="${i}">✕</button></td></tr>`).join('');
   renderPresets();
   $('#setText').innerHTML = ['glazingLine', 'illustrationLine', 'installTerms', 'orderTerms'].map(k => `<div class="field" style="margin-bottom:8px"><label>${{ glazingLine: 'Glazing line', illustrationLine: 'Illustration line', installTerms: 'Installation terms', orderTerms: 'Order confirmation terms (one per line)' }[k]}</label><textarea data-s="${k}" rows="${k.endsWith('Terms') ? 5 : 2}">${esc(S[k])}</textarea></div>`).join('');
 }
@@ -1051,14 +1168,39 @@ function render() {
   renderProject();
   const lines = renderTable();
   renderExtras(lines);
+  renderMargins(lines);
   renderTotals(lines);
   renderBridge(lines);
   renderSteps();
   renderDocs(lines);
+  renderUploadStrip();
   $('#drop').style.display = state.rows.length ? 'none' : '';
   $('#hero').style.display = state.rows.length ? 'none' : '';
+  xlDirty();
 }
-function soft() { const lines = computeAll(); renderTotals(lines); renderBridge(lines); renderSteps(); renderDocs(lines); refreshCalcCells(lines); refreshExtras(lines); }
+function soft() { const lines = computeAll(); renderMargins(lines); renderTotals(lines); renderBridge(lines); renderSteps(); renderDocs(lines); refreshCalcCells(lines); refreshExtras(lines); xlDirty(); }
+
+/* ---------- which file is this quote built from, and when did it go in ---------- */
+function noteUpload(file, kind) {
+  state.uploads = [{ file, kind, at: new Date().toISOString() }, ...(state.uploads || [])].slice(0, 20);
+  renderUploadStrip(true);
+}
+const fmtWhen = iso => new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+function agoText(iso) {
+  const s = Math.max(0, Math.round((Date.now() - new Date(iso)) / 1000));
+  if (s < 45) return 'just now'; const m = Math.round(s / 60); if (m < 60) return m + ' minute' + (m === 1 ? '' : 's') + ' ago';
+  const h = Math.round(m / 60); return h < 24 ? h + ' hour' + (h === 1 ? '' : 's') + ' ago' : Math.round(h / 24) + ' day(s) ago';
+}
+function renderUploadStrip(fresh) {
+  const el = $('#upStrip'), u = (state.uploads || [])[0];
+  if (!u) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = `<span class="lab">Latest upload</span><b>${esc(u.file)}</b><span class="hint" style="color:#a8a599">${esc(u.kind)}</span>
+    <span class="when">${esc(fmtWhen(u.at))}</span><span class="ago" data-ago="${esc(u.at)}">(${agoText(u.at)})</span>
+    ${state.uploads.length > 1 ? `<details><summary>${state.uploads.length - 1} earlier upload${state.uploads.length > 2 ? 's' : ''}</summary><ol>${state.uploads.slice(1).map(x => `<li>${esc(x.file)} · ${esc(x.kind)} · ${esc(fmtWhen(x.at))}</li>`).join('')}</ol></details>` : ''}`;
+  if (fresh) { el.classList.remove('fresh'); void el.offsetWidth; el.classList.add('fresh'); }
+}
+setInterval(() => document.querySelectorAll('[data-ago]').forEach(x => x.textContent = '(' + agoText(x.dataset.ago) + ')'), 30000);
 function refreshCalcCells(lines) {
   lines.forEach(L => {
     const tr = document.querySelector(`#ws tr[data-id="${L.row.id}"]`); if (!tr) return;
@@ -1080,6 +1222,14 @@ document.addEventListener('input', e => {
     let val = t.value;
     if (NUMERIC.has(k)) val = val.trim() === '' ? '' : Number(val);
     const idx = activeRows().indexOf(row), auto = autoFor(row, idx);
+    if (t.dataset.pct) {
+      // typed as a profit %, kept as the multiplier; blank or the standard % puts it back to standard
+      if (val === '' || !isFinite(pctToX(val, S.marginMode)) || Math.abs(Number(val) - pctOf(auto.markup)) < 0.05) delete row.ov.markup;
+      else row.ov.markup = pctToX(val, S.marginMode);
+      t.classList.toggle('ov', 'markup' in row.ov);
+      t.title = '= ×' + (Number(vals(row, idx).markup) || 0).toFixed(2) + ' on cost';
+      soft(); return;
+    }
     if (k !== 'retailOverride' && String(val) === String(auto[k])) delete row.ov[k];
     else if (k === 'retailOverride' && val === '') delete row.ov[k];
     else row.ov[k] = val;
@@ -1095,7 +1245,8 @@ document.addEventListener('input', e => {
   }
   if (t.dataset.r != null) {
     const r = S.rules[+t.dataset.r], k = t.dataset.k;
-    r[k] = ['markup', 'maxWidth', 'manDays'].includes(k) ? (t.value.trim() === '' ? '' : Number(t.value)) : t.value;
+    if (k === 'markup') { const x = t.value.trim() === '' ? '' : pctToX(t.value, S.marginMode); if (x === '' || isFinite(x)) r.markup = x; saveSettings(); renderTable(); soft(); return; }
+    r[k] = ['maxWidth', 'manDays'].includes(k) ? (t.value.trim() === '' ? '' : Number(t.value)) : t.value;
     saveSettings(); renderTable(); soft();
   }
 });
@@ -1137,13 +1288,19 @@ $('#tabs').addEventListener('click', e => {
   state.view = b.dataset.v;
   [...$('#tabs').children].forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('.view').forEach(v => { const on = v.id === 'view-' + state.view; v.style.display = on ? '' : 'none'; v.classList.toggle('print-on', on); });
+  if (state.view === 'xl') renderXl();
 });
-$('#fileInput').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadEstimationFile(f); e.target.value = ''; });
+$('#fileInput').addEventListener('change', e => { const f = e.target.files[0]; if (f) openSpreadsheet(f); e.target.value = ''; });
 const drop = $('#drop');
 ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('hover'); }));
 ['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || e.target === document.documentElement) drop.classList.remove('hover'); }));
-document.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (!f) return; if (/\.json$/i.test(f.name)) openJob(f); else loadEstimationFile(f); });
+document.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (!f) return; if (/\.json$/i.test(f.name)) openJob(f); else openSpreadsheet(f); });
 $('#addExtras').onclick = () => openExtras();
+$('#btnNew').onclick = () => {
+  if (state.rows.length && !confirm('Start a new quote?\n\nThis clears the client, project, lines and drawings of “' + (state.project.projectName || 'this quote') + '”. Save the job or download the Excel first if you will need it again.')) return;
+  resetJob(); render(); window.scrollTo(0, 0);
+  banner('ok', 'New quote started. Drop the next Logikal estimation to begin.');
+};
 $('#btnSettings').onclick = () => { renderSettings(); $('#drawer').classList.add('open'); $('#scrim').classList.add('on'); };
 const closeDrawer = () => { $('#drawer').classList.remove('open'); $('#scrim').classList.remove('on'); render(); };
 $('#closeDrawer').onclick = closeDrawer; $('#scrim').onclick = closeDrawer;
@@ -1151,7 +1308,11 @@ $('#resetSettings').onclick = () => { if (!confirm('Reset all pricing, rules and
 $('#btnPrint').onclick = () => { if (state.view === 'work') { $('#tabs').querySelector('[data-v="quote"]').click(); } setTimeout(() => window.print(), 50); };
 
 /* ---------- extras: items that are not in the Logikal estimation (own section on the page) ---------- */
-const presetOv = p => ({ product: p.name, markup: Number(p.markup) || S.defaultMarkup, manDays: Number(p.manDays) || 0, cill: p.cill, trickle: p.trickle, handle: p.handle, glassSpec: p.glassSpec, config: p.config || '', glassCost: 0 });
+const presetOv = p => {
+  const o = { product: p.name, markup: Number(p.markup) || S.defaultMarkup, manDays: Number(p.manDays) || 0, cill: p.cill, trickle: p.trickle, handle: p.handle, glassSpec: p.glassSpec, config: p.config || '', glassCost: 0 };
+  if (productMarginFor(p.name) != null) delete o.markup;   // the product's own margin applies
+  return o;
+};
 const isExtra = r => r.source === 'manual' && !r.missing;
 
 function openExtras() {
@@ -1186,13 +1347,13 @@ function renderExtras(lines) {
       <td>${cell(r, 'height', v.height, 'num', 'mm')}</td>
       <td>${cell(r, 'qty', v.qty, 'num')}</td>
       <td>${cell(r, 'frameCost', v.frameCost, 'num ' + (needCost ? 'need' : ''), 'type cost')}</td>
-      <td>${cell(r, 'markup', v.markup, 'num')}</td>
+      <td>${marginInput(r, v, v._auto, 'num')}</td>
       <td class="price" data-xprice="${r.id}">${needCost ? '<span class="hint">—</span>' : gbp(L.retail)}</td>
       <td>${cell(r, 'manDays', v.manDays, 'num')}</td>
       <td><textarea data-f="config" rows="2">${esc(v.config)}</textarea></td>
       <td><button class="btn sm" data-xdel="${r.id}" title="Remove this extra">✕</button></td></tr>`;
   }).join('');
-  $('#extrasTbl').innerHTML = `<div class="xt-wrap"><table class="xt"><thead><tr><th>#</th><th>Product</th><th>Location / ref</th><th>Width</th><th>Height</th><th>Qty</th><th>Cost to us £</th><th>Markup ×</th><th>Price to customer</th><th>Man days</th><th>Description on quote</th><th></th></tr></thead>
+  $('#extrasTbl').innerHTML = `<div class="xt-wrap"><table class="xt"><thead><tr><th>#</th><th>Product</th><th>Location / ref</th><th>Width</th><th>Height</th><th>Qty</th><th>Cost to us £</th><th>Margin %</th><th>Price to customer</th><th>Man days</th><th>Description on quote</th><th></th></tr></thead>
     <tbody>${rowsHtml}</tbody><tfoot><tr><td colspan="8">Extras total (exc VAT)</td><td class="price" id="xTotal">${gbp(xl.reduce((s, l) => s + l.retail, 0))}</td><td colspan="3"></td></tr></tfoot></table></div>` + swapNote(swapped);
 }
 const needLoc = v => !String(v.location || '').trim();
@@ -1310,14 +1471,15 @@ document.addEventListener('change', e => {
 });
 
 function renderPresets() {
-  const PC = [['name', 'Product', 170], ['markup', '×', 50], ['manDays', 'Man days', 60], ['cill', 'Cill', 100], ['trickle', 'Trickle', 56], ['handle', 'Handle / lock', 130], ['glassSpec', 'Glass', 110], ['config', 'Configuration wording', 260]];
+  const PC = [['name', 'Product', 170], ['markup', 'Margin %', 64], ['manDays', 'Man days', 60], ['cill', 'Cill', 100], ['trickle', 'Trickle', 56], ['handle', 'Handle / lock', 130], ['glassSpec', 'Glass', 110], ['config', 'Configuration wording', 260]];
   $('#presetTbl').innerHTML = `<tr>${PC.map(c => `<th style="min-width:${c[2]}px">${c[1]}</th>`).join('')}<th></th></tr>` +
-    S.extrasPresets.map((p, i) => `<tr>${PC.map(([k]) => `<td><input data-pr="${i}" data-k="${k}" value="${esc(p[k])}"></td>`).join('')}<td><button class="btn sm" data-prdel="${i}">✕</button></td></tr>`).join('');
+    S.extrasPresets.map((p, i) => `<tr>${PC.map(([k]) => `<td><input data-pr="${i}" data-k="${k}" value="${esc(k === 'markup' ? asPct(p.markup) : p[k])}"></td>`).join('')}<td><button class="btn sm" data-prdel="${i}">✕</button></td></tr>`).join('');
 }
 document.addEventListener('input', e => {
   const t = e.target; if (t.dataset.pr == null) return;
   const p = S.extrasPresets[+t.dataset.pr], k = t.dataset.k;
-  p[k] = ['markup', 'manDays'].includes(k) ? (t.value === '' ? 0 : Number(t.value)) : t.value; saveSettings();
+  if (k === 'markup') { const x = t.value.trim() === '' ? 0 : pctToX(t.value, S.marginMode); if (isFinite(x)) p.markup = x; saveSettings(); return; }
+  p[k] = k === 'manDays' ? (t.value === '' ? 0 : Number(t.value)) : t.value; saveSettings();
 });
 document.addEventListener('click', e => {
   const t = e.target;
@@ -1326,6 +1488,63 @@ document.addEventListener('click', e => {
   if (t.dataset.go === 'totals') document.querySelector('.totals').scrollIntoView({ behavior: 'smooth' });
 });
 $('#addPreset').onclick = () => { S.extrasPresets.push({ name: 'New product', markup: 2, manDays: 0, cill: 'N/A', trickle: 'N/A', handle: 'N/A', glassSpec: '', config: '' }); saveSettings(); renderPresets(); };
+
+/* ---------- profit margin by product: windows 70%, sliding doors 80% … ----------
+   A margin set here is remembered for that product on every quote, and applies to every line of
+   it, Logikal or extra. A price typed by hand on a line still wins over it. */
+let marginProducts = [];
+function renderMargins(lines) {
+  const act = lines.filter(l => !l.row.missing);
+  $('#marginCard').style.display = act.length ? '' : 'none';
+  if (!act.length) return;
+  const groups = new Map();
+  act.forEach(L => {
+    const p = String(L.v.product || '').trim() || 'Other';
+    const g = groups.get(p) || { n: 0, cost: 0, retail: 0, typed: 0 };
+    g.n += Number(L.v.qty) || 1; g.cost += L.total; g.retail += L.retail; if ('retailOverride' in L.row.ov) g.typed++;
+    groups.set(p, g);
+  });
+  marginProducts = [...groups.keys()];
+  const mode = S.marginMode, f1 = x => (Math.round(x * 100) / 100).toFixed(2);
+  const both = (pct, cost) => {
+    const a = pctToX(pct, 'markup'), b = pctToX(pct, 'margin');
+    return `<span class="both">${pct}% as cost + ${pct}%: <b>×${f1(a)}</b> → ${gbp(cost * a)}${isFinite(b) ? ` · as ${pct}% of the price: <b>×${f1(b)}</b> → ${gbp(cost * b)}` : ''}</span>`;
+  };
+  const rows = marginProducts.map((p, i) => {
+    const g = groups.get(p), set = productMarginFor(p), now = g.cost ? pctOf(g.retail / g.cost) : 0, shown = set != null ? set : now;
+    return `<tr><td><b>${esc(p)}</b><div class="hint">${g.n} element${g.n === 1 ? '' : 's'} · cost ${gbp(g.cost)}${g.typed ? ` · ${g.typed} with a typed price (kept)` : ''}</div></td>
+      <td><input data-pm="${i}" class="${set != null ? 'set' : ''}" value="${set != null ? set : ''}" placeholder="${now}"> %
+        <span class="q">${[70, 80, 90].map(q => `<button data-pmq="${i}" data-v="${q}" class="${set === q ? 'on' : ''}">${q}%</button>`).join('')}${set != null ? `<button data-pmq="${i}" data-v="" title="Back to the standard margin from Pricing & rules">↺</button>` : ''}</span>
+        ${both(shown, g.cost)}</td>
+      <td class="r">${gbp(g.retail)}</td></tr>`;
+  }).join('');
+  $('#marginBox').innerHTML = `<div class="mmode"><span class="hint" style="flex-basis:auto">A margin of 70% means:</span>
+      <label><input type="radio" name="mmode" value="markup"${mode === 'markup' ? ' checked' : ''}> cost + 70% <span class="hint">(£1,000 → £1,700)</span></label>
+      <label><input type="radio" name="mmode" value="margin"${mode === 'margin' ? ' checked' : ''}> 70% of the selling price is profit <span class="hint">(£1,000 → £3,333)</span></label>
+      <span class="hint">Type a % for a product, or click 70 / 80 / 90. Blank = the standard margin from Pricing &amp; rules. Each product's figure is shown both ways so you can check.</span></div>
+    <table class="mt"><thead><tr><th>Product</th><th>Profit margin</th><th class="r">Price to customer (exc VAT)</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function setProductMargin(product, pct) {
+  const blank = pct === '' || pct == null || !isFinite(pctToX(pct, S.marginMode));
+  if (blank) delete S.productMargins[product]; else S.productMargins[product] = Number(pct);
+  saveSettings();
+  state.rows.forEach((r, i) => {
+    const v = vals(r, i); if (String(v.product || '').trim() !== product) return;
+    delete r.ov.markup;
+    // an extra with no product margin goes back to its own list markup
+    if (blank && r.source === 'manual') { const p = S.extrasPresets.find(x => x.name === product); if (p && Number(p.markup)) r.ov.markup = Number(p.markup); }
+  });
+  render();
+}
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.pm != null) { const p = marginProducts[+t.dataset.pm]; if (p != null) setProductMargin(p, t.value.trim() === '' ? '' : Number(t.value)); }
+  if (t.name === 'mmode') { S.marginMode = t.value; saveSettings(); render(); }
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-pmq]'); if (!b) return;
+  const p = marginProducts[+b.dataset.pmq]; if (p != null) setProductMargin(p, b.dataset.v === '' ? '' : Number(b.dataset.v));
+});
 
 /* how the final figure is built: Logikal → your changes → extras → discount → installation */
 function renderBridge(lines) {
@@ -1361,19 +1580,434 @@ function renderSteps() {
 /* ---------- save / open job ---------- */
 function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
 const safeName = s => (s || 'quote').replace(/[\\/:*?"<>|]+/g, '').trim() || 'quote';
-$('#btnSaveJob').onclick = () => download(safeName(state.project.projectName) + ' - quote job.json', new Blob([JSON.stringify({ app: 'logikal-quote-builder', v: 1, project: state.project, est: state.est, rows: state.rows, settings: S })], { type: 'application/json' }));
+const jobData = () => ({ app: 'logikal-quote-builder', v: 1, jobId: state.jobId, project: state.project, est: state.est, rows: state.rows, uploads: state.uploads || [], settings: S });
+$('#btnSaveJob').onclick = () => download(safeName(state.project.projectName) + ' - quote job.json', new Blob([JSON.stringify(jobData())], { type: 'application/json' }));
 $('#jobInput').addEventListener('change', e => { const f = e.target.files[0]; if (f) openJob(f); e.target.value = ''; });
 async function openJob(f) {
   try {
     const j = JSON.parse(await f.text());
     if (j.app !== 'logikal-quote-builder') throw new Error('not a quote-builder job file');
     state.project = j.project; state.est = j.est; state.rows = j.rows; uid = Math.max(0, ...state.rows.map(r => r.id)) + 1;
-    if (j.settings && confirm('Use the pricing & rules saved with this job? (Cancel keeps your current settings.)')) { S = Object.assign(clone(DEFAULT_SETTINGS), j.settings); saveSettings(); }
-    banner('ok', 'Opened job “' + esc(f.name) + '”. Drop a revised estimation to update it.'); render();
+    state.jobId = j.jobId || newJobId(); state.uploads = Array.isArray(j.uploads) ? j.uploads : [];
+    if (j.settings && confirm('Use the pricing & rules saved with this job? (Cancel keeps your current settings.)')) { S = Object.assign(clone(DEFAULT_SETTINGS), j.settings); if (!S.productMargins) S.productMargins = {}; saveSettings(); }
+    banner('ok', 'Opened job “' + esc(f.name) + '”. Drop a revised estimation to update it.');
+    noteUpload(f.name, 'Saved job'); render();
   } catch (err) { banner('warn', 'Could not open job: ' + esc(err.message)); }
 }
 
-/* ---------- Excel export (live formulas + drawings) ---------- */
+/* ---------- the working sheet workbook: live formulas, drawings, and readable back in ----------
+   The same workbook is what "Excel" downloads, what the Excel tab shows, and what "Upload edited
+   Excel" reads. Yellow cells are inputs; everything else is worked out. Column Z (hidden) carries
+   each line's id, and a hidden RENKA DATA sheet carries the whole job, so a file changed in Excel
+   and uploaded on any machine comes back as the same quote with those changes on it. */
+const XL_IN = 'FFF7C2';                 // yellow: yours to change
+const XL_SHEET = 'QUOTE WORKING SHEET', XL_DATA = 'RENKA DATA', XL_HEAD = 12;
+const XL_COL = { frameNo: 1, ref: 2, product: 3, width: 4, height: 5, colour: 6, config: 7, trickle: 8, cill: 9, handle: 10, frameCost: 11, glassCost: 12, total: 13, retail: 14, drainCost: 15, drainRetail: 16, tripleCost: 17, tripleRetail: 18, glassSpec: 19, additional: 20, image: 21, margin: 22, qty: 23, manDays: 24, id: 26 };
+const XL_YELLOW = new Set([XL_COL.frameCost, XL_COL.glassCost, XL_COL.retail, XL_COL.margin, XL_COL.qty, XL_COL.manDays, XL_COL.drainCost, XL_COL.tripleCost]);
+const XL_TEXT = ['product', 'width', 'height', 'colour', 'config', 'trickle', 'cill', 'handle', 'glassSpec', 'additional'];
+const retailFormula = r => S.marginMode === 'margin' ? `M${r}/(1-V${r})` : `M${r}*(1+V${r})`;
+const refText = (v, row) => [v.location, row.ref].filter(Boolean).join(' - ');
+
+/* drawings appear on every line and again inside each estimation position: store each once */
+function packJob() {
+  const pool = [], at = new Map();
+  const ref = s => { if (typeof s !== 'string' || !s.startsWith('data:')) return s; if (!at.has(s)) { at.set(s, pool.length); pool.push(s); } return '#img:' + at.get(s); };
+  const rows = state.rows.map(r => ({ ...r, drawing: ref(r.drawing), est: r.est ? { ...r.est, drawing: ref(r.est.drawing) } : r.est }));
+  return { ...jobData(), rows, pool };
+}
+function unpackJob(j) {
+  const get = s => typeof s === 'string' && s.startsWith('#img:') ? (j.pool || [])[+s.slice(5)] || null : s;
+  j.rows = (j.rows || []).map(r => ({ ...r, drawing: get(r.drawing), est: r.est ? { ...r.est, drawing: get(r.est.drawing) } : r.est }));
+  delete j.pool; return j;
+}
+
+async function buildWorkbook() {
+  const lines = computeAll().filter(l => !l.row.missing), T = projectTotals(lines, S), P = state.project;
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Quote Builder';
+  wb.calcProperties = { fullCalcOnLoad: true };
+  const ws = wb.addWorksheet(XL_SHEET, { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+  const hdr = ['FRAME NO.', 'LOCATION / REF', 'PRODUCT DESCRIPTION', 'FRAME WIDTH', 'FRAME HEIGHT', 'FRAME COLOUR', 'CONFIGURATION', 'TRICKLE VENTS', 'CILL', 'HANDLE / LOCK COLOUR & LOCATION', 'Frame cost', 'Glass cost', 'Total cost', 'RETAIL PRICE (EXC VAT)', 'DRAIN SYSTEM', 'DRAIN RETAIL PRICE (EXC VAT)', 'TRIPLE GLAZING ADDITIONAL COST (TO US)', 'TRIPLE GLAZING ADDITIONAL COST (EXC VAT)', 'NON STANDARD GLASS SPECIFICATIONS', 'ADDITIONAL ELEMENTS / COSTS TO BE FINALISED POST SURVEY', 'IMAGE', S.marginMode === 'margin' ? 'PROFIT MARGIN % (OF PRICE)' : 'PROFIT MARGIN % (ON COST)', 'QTY', 'MAN DAYS', '', 'LINE ID'];
+  const widths = [8, 22, 24, 10, 10, 24, 34, 12, 14, 22, 11, 11, 11, 14, 10, 12, 12, 12, 16, 30, 24, 11, 6, 9, 30, 8];
+  widths.forEach((w, i) => ws.getColumn(i + 1).width = w);
+  ws.getColumn(XL_COL.id).hidden = true;
+  ws.mergeCells('A1:U1'); ws.getCell('A1').value = 'QUOTATION'; ws.getCell('A1').font = xFont(28, { color: { argb: 'FFFFFFFF' } }); ws.getCell('A1').fill = xFill(GREY_B); ws.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }; ws.getRow(1).height = 50;
+  { const lg = await logoOnGrey(); if (lg) ws.addImage(wb.addImage({ base64: lg.data, extension: 'png' }), { tl: { col: 0.15, row: 0.12 }, ext: { width: 46 * lg.w / lg.h, height: 46 } }); }
+  ws.getCell('U2').value = P.date; ws.getCell('U2').font = xFont(8);
+  [['A3', versionLine(P)], ['A4', P.client], ['A5', P.projectName ? 'Project: ' + P.projectName : ''], ['A6', (P.address || '').replace(/\n/g, ', ')], ['A7', (P.tel ? 'TEL: ' + P.tel + '   ' : '') + 'INSTALLATION DATE: ' + (P.installDate || 'TBC')], ['A9', S.glazingLine], ['A10', S.illustrationLine]].forEach(([c, v]) => ws.getCell(c).value = v || '');
+  ws.getCell('W3').value = 'Yellow cells are yours to change.'; ws.getCell('W3').fill = xFill(XL_IN); ws.getCell('W3').font = { bold: true, size: 9 };
+  ws.getCell('W4').value = 'Change them, save, then use “Upload edited Excel” in the quote portal: the quote, totals and PDF follow.'; ws.getCell('W4').font = { size: 8 };
+  ws.getCell('W5').value = 'Typing a figure over TOTAL PROJECT COST sets the discount needed to reach it.'; ws.getCell('W5').font = { size: 8 };
+  const H = XL_HEAD; ws.getRow(H).values = hdr;
+  ws.getRow(H).eachCell(c => { c.font = xFont(8); c.fill = xFill(c.col === 20 ? YELLOW : c.col === 21 ? GREY_B : XL_YELLOW.has(c.col) ? XL_IN : GREY_D); c.border = xBox; c.alignment = { wrapText: true, horizontal: 'center', vertical: 'middle' }; });
+  ws.getRow(H).height = 42;
+  const snap = {};   // what each line said when written, so an upload knows which cells were changed
+  let r = H + 1;
+  for (const L of lines) {
+    const v = L.v, row = ws.getRow(r), asNum = x => x === '' || x == null ? '' : (isNaN(+x) ? x : +x);
+    const mpct = Math.round(xToPct(v.markup, S.marginMode) * 100) / 10000;   // a fraction, shown as %
+    row.values = [asNum(v.frameNo), refText(v, L.row), v.product, asNum(v.width), asNum(v.height), v.colour, v.config, v.trickle, v.cill, v.handle, +v.frameCost || 0, +v.glassCost || 0, null, null, +v.drainCost || 0, null, +v.tripleCost || 0, null, v.glassSpec, v.additional, '', mpct, +v.qty || 1, +v.manDays || 0, '', L.row.id];
+    row.getCell(XL_COL.total).value = { formula: `(K${r}+L${r})*W${r}`, result: L.total };
+    row.getCell(XL_COL.retail).value = 'retailOverride' in L.row.ov ? L.retail : { formula: retailFormula(r), result: L.retail };
+    row.getCell(XL_COL.drainRetail).value = { formula: `O${r}*${S.extrasMarkup}`, result: L.drainRetail };
+    row.getCell(XL_COL.tripleRetail).value = { formula: `Q${r}*${S.extrasMarkup}`, result: L.tripleRetail };
+    [11, 12, 13, 14, 15, 16, 17, 18].forEach(c => row.getCell(c).numFmt = '£#,##0.00');
+    row.getCell(XL_COL.margin).numFmt = '0.0%';
+    for (let ci = 1; ci <= XL_COL.manDays; ci++) { const c = row.getCell(ci); c.alignment = { wrapText: true, horizontal: 'center', vertical: 'middle' }; c.font = xFont(9); c.border = xBox; if ([4, 5].includes(ci)) c.fill = xFill(GREY_D); if (XL_YELLOW.has(ci)) c.fill = xFill(XL_IN); }
+    row.height = 96;
+    snap[L.row.id] = { ref: refText(v, L.row), frameCost: +v.frameCost || 0, glassCost: +v.glassCost || 0, retail: L.retail, retailTyped: 'retailOverride' in L.row.ov, margin: mpct, qty: +v.qty || 1, manDays: +v.manDays || 0, drainCost: +v.drainCost || 0, tripleCost: +v.tripleCost || 0, ...Object.fromEntries(XL_TEXT.map(k => [k, v[k] ?? ''])) };
+    const png = await linePng(L);
+    if (png) { const id = wb.addImage({ base64: png.data, extension: 'png' }); const k = Math.min(160 / png.w, 120 / png.h); ws.addImage(id, { tl: { col: 20.05, row: r - 1 + 0.05 }, ext: { width: png.w * k, height: png.h * k }, editAs: 'oneCell' }); }
+    r++;
+  }
+  const first = H + 1, last = Math.max(first, r - 1); r++;
+  const put = (label, col, formula, result, { fmt = '£#,##0.00', note = 'PLUS VAT', input = false, key } = {}) => {
+    ws.getCell('A' + r).value = label; ws.getCell('A' + r).font = { bold: true };
+    const c = ws.getCell(col + r); c.value = formula ? { formula, result } : result; c.numFmt = fmt; c.font = { bold: true };
+    if (input) { c.fill = xFill(XL_IN); c.border = xBox; }
+    if (note) ws.getCell('U' + r).value = note;
+    if (key) ws.getCell('Z' + r).value = key;
+    return r++;
+  };
+  const optF = S.includeOptions ? `+SUM(P${first}:P${last})+SUM(R${first}:R${last})` : '';
+  const rTot = put('TOTAL GLAZED FRAME COST', 'N', `SUM(N${first}:N${last})${optF}`, T.framesInc, { key: '#frames' });
+  ws.getCell('M' + rTot).value = { formula: `SUM(M${first}:M${last})`, result: T.cost }; ws.getCell('M' + rTot).numFmt = '£#,##0.00';
+  ws.getCell('X' + rTot).value = { formula: `SUM(X${first}:X${last})`, result: T.manDays }; ws.getCell('Y' + rTot).value = 'TOTAL MAN DAYS';
+  const rDisc = put(S.discountLabel.toUpperCase() + '  (type the % in the yellow box)', 'N', `N${rTot}*M${r}`, T.discount, { key: '#discount', input: true });
+  { const c = ws.getCell('M' + rDisc); c.value = (Number(S.discountPct) || 0) / 100; c.numFmt = '0.0%'; c.fill = xFill(XL_IN); c.border = xBox; c.font = { bold: true }; }
+  const rAfter = put('TOTAL GLAZED FRAME COST (AFTER PROJECT DISCOUNT)', 'N', `N${rTot}-N${rDisc}`, T.afterDisc, { key: '#after' });
+  const rCrane = put('CRANE / POWERED LIFTING EQUIPMENT', 'N', null, T.crane, { key: '#crane', input: true });
+  const inst = [['COST / MAN DAY', S.dayRate], ['SURVEY COST', Number(S.surveyCost) || 0], ['PETROL COST', Number(S.petrolCost) || 0], ['ACCOMMODATION / SUBSISTENCE COST', Number(S.accomCost) || 0]];
+  inst.forEach(([l, val], i) => { const c = ws.getCell('X' + (rCrane + i)); c.value = Number(val) || 0; c.numFmt = '£#,##0.00'; c.fill = xFill(XL_IN); c.border = xBox; ws.getCell('Y' + (rCrane + i)).value = l; });
+  ws.getCell('X' + (rCrane + 4)).value = { formula: `X${rTot}*X${rCrane}+X${rCrane + 1}+X${rCrane + 2}+X${rCrane + 3}`, result: T.installCalc }; ws.getCell('X' + (rCrane + 4)).numFmt = '£#,##0.00'; ws.getCell('Y' + (rCrane + 4)).value = 'TOTAL CALCULATED INSTALL COST';
+  const rInst = put('INSTALLATION COST', 'N', S.installOverride === '' ? `X${rCrane + 4}` : null, T.install, { key: '#install', input: true });
+  const rTotal = put('TOTAL PROJECT COST (INC INSTALLATION)', 'N', `N${rAfter}+N${rCrane}+N${rInst}`, T.total, { key: '#total', input: true });
+  r = Math.max(r, rCrane + 5) + 1; ws.getCell('A' + r).value = `SUPPLY ONLY - DELIVERY COST - ${gbp(S.deliveryCost)} + VAT (DELIVERY TO KERBSIDE)`; r++;
+  ws.getCell('A' + r).value = S.installTerms; ws.mergeCells(`A${r}:U${r}`); ws.getCell('A' + r).alignment = { wrapText: true, vertical: 'top' }; ws.getRow(r).height = 60;
+  if (state.est) { r += 2; ws.getCell('A' + r).value = 'Source estimation: ' + state.est.fileName + ' (' + (state.est.project.date || '') + ')'; ws.getCell('A' + r).font = { italic: true, size: 8, color: { argb: 'FF777777' } }; }
+  ws.views = [{ state: 'frozen', ySplit: H }];
+  await addCustomerSheet(wb, 'QUOTATION', lines, T, false);
+  await addCustomerSheet(wb, 'ORDER CONFIRMATION', lines, T, true);
+  // the job itself, so this file can be uploaded back and matched to its quote
+  const data = wb.addWorksheet(XL_DATA, { state: 'veryHidden' });
+  const json = JSON.stringify({ ...packJob(), exportedAt: new Date().toISOString(), marginMode: S.marginMode, snap, totals: { discountPct: Number(S.discountPct) || 0, crane: T.crane, install: T.install, installOverride: S.installOverride, total: T.total, framesInc: T.framesInc, dayRate: S.dayRate, surveyCost: Number(S.surveyCost) || 0, petrolCost: Number(S.petrolCost) || 0, accomCost: Number(S.accomCost) || 0 } });
+  const CH = 30000, n = Math.ceil(json.length / CH);
+  data.getCell('A1').value = 'renka-quote-job v1'; data.getCell('A2').value = n;
+  for (let i = 0; i < n; i++) data.getCell('A' + (3 + i)).value = json.slice(i * CH, (i + 1) * CH);
+  return { wb, lines, T, rows: { first, last: lines.length ? last : first - 1, rTot, rDisc, rAfter, rCrane, rInst, rTotal } };
+}
+const xlFileName = () => safeName(state.project.projectName) + ' ' + (state.project.version || 'Quotation') + '.xlsx';
+async function downloadExcel() {
+  if (!window.ExcelJS) { banner('warn', 'Excel library still loading — try again in a moment.'); return; }
+  const { wb } = await buildWorkbook();
+  const buf = await wb.xlsx.writeBuffer();
+  download(xlFileName(), new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  banner('ok', `Excel downloaded: <b>${esc(xlFileName())}</b>. Change the <span class="xlkey">yellow</span> cells in Excel, save, then click <b>Upload edited Excel</b> to bring the changes back.`);
+}
+$('#btnExcel').onclick = downloadExcel;
+/* ---------- reading an edited working sheet back in ----------
+   The file carries the job it was written from (RENKA DATA) and, for every line, what each cell
+   said when it was written. A cell that still says the same is left alone; a cell that says
+   something else is the person's change, and becomes an override on that line, exactly as if it
+   had been typed into the table here. A formula overwritten with a number is a typed price. */
+function xlCell(cell) {
+  const x = cell ? cell.value : null;
+  if (x && typeof x === 'object') {
+    if ('formula' in x || 'sharedFormula' in x) return { f: true, v: x.result && typeof x.result === 'object' ? null : x.result };
+    if (x.richText) return { f: false, v: x.richText.map(t => t.text).join('') };
+    if ('text' in x) return { f: false, v: x.text };
+    if ('error' in x) return { f: false, v: null };
+    if (x instanceof Date) return { f: false, v: x.toLocaleDateString('en-GB') };
+  }
+  return { f: false, v: x === undefined ? null : x };
+}
+const xlNum = x => { if (x == null || x === '') return null; const n = typeof x === 'number' ? x : num(x); return n == null || !isFinite(n) ? null : n; };
+const xlStr = x => x == null ? '' : String(x).trim();
+function readJobSheet(wb) {
+  const d = wb.getWorksheet(XL_DATA);
+  if (!d || xlStr(xlCell(d.getCell('A1')).v) !== 'renka-quote-job v1') return null;
+  const n = xlNum(xlCell(d.getCell('A2')).v) || 0; let s = '';
+  for (let i = 0; i < n; i++) s += xlStr(xlCell(d.getCell('A' + (3 + i))).v);
+  return unpackJob(JSON.parse(s));
+}
+
+function importWorkbook(wb, fileName, { fromViewer = false } = {}) {
+  const j = readJobSheet(wb), ws = wb.getWorksheet(XL_SHEET);
+  if (!j || !ws) throw new Error('This Excel was not downloaded from this portal (or the hidden RENKA DATA sheet was removed), so it cannot be matched to a quote. Download the Excel from here, make the changes in that file, and upload it.');
+  const mode = j.marginMode || S.marginMode, snaps = j.snap || {}, changes = [];
+  const byId = new Map(j.rows.map(r => [r.id, r]));
+  const near = (a, b, tol = 0.004) => Math.abs((Number(a) || 0) - (Number(b) || 0)) <= tol;
+
+  // the job as it was written, then every changed cell on top of it
+  const ordered = [], seen = new Set();
+  let added = 0;
+  for (let rn = XL_HEAD + 1; rn <= ws.rowCount; rn++) {
+    const at = c => xlCell(ws.getRow(rn).getCell(c)), key = xlStr(at(XL_COL.id).v);
+    if (key.startsWith('#') || /^TOTAL GLAZED FRAME COST$/i.test(xlStr(at(1).v))) break;
+    const id = Number(key), row = key && byId.get(id), sn = row && snaps[id];
+    if (row && sn) {
+      seen.add(id); ordered.push(row);
+      const label = `Frame ${xlStr(at(XL_COL.frameNo).v) || id}`;
+      const ov = row.ov;
+      const ref = xlStr(at(XL_COL.ref).v);
+      if (ref !== xlStr(sn.ref)) {
+        const tail = row.ref ? ' - ' + row.ref : '';
+        ov.location = row.ref && ref === row.ref ? '' : tail && ref.endsWith(tail) ? ref.slice(0, -tail.length).trim() : ref;
+        changes.push(`${label}: location → “${ref}”`);
+      }
+      XL_TEXT.forEach(k => {
+        const v = at(XL_COL[k]).v;
+        if (xlStr(v) === xlStr(sn[k])) return;
+        ov[k] = (k === 'width' || k === 'height') && xlNum(v) != null ? xlNum(v) : xlStr(v);
+        changes.push(`${label}: ${k === 'glassSpec' ? 'glass' : k} → “${xlStr(v).slice(0, 40)}”`);
+      });
+      [['frameCost', 'frame cost'], ['glassCost', 'glass cost'], ['qty', 'qty'], ['manDays', 'man days'], ['drainCost', 'drain cost'], ['tripleCost', 'triple glazing cost']].forEach(([k, l]) => {
+        const v = xlNum(at(XL_COL[k]).v);
+        if (v == null || near(v, sn[k])) return;
+        ov[k] = v; changes.push(`${label}: ${l} ${k === 'qty' || k === 'manDays' ? sn[k] + ' → ' + v : gbp(sn[k]) + ' → ' + gbp(v)}`);
+      });
+      const m = xlNum(at(XL_COL.margin).v);
+      if (m != null && Math.abs(m - sn.margin) > 0.00005 && isFinite(pctToX(m * 100, mode))) {
+        ov.markup = pctToX(m * 100, mode);
+        changes.push(`${label}: margin ${(sn.margin * 100).toFixed(1)}% → ${(m * 100).toFixed(1)}%`);
+      }
+      const p = at(XL_COL.retail), pv = xlNum(p.v);
+      if (!p.f && pv != null && (!near(pv, sn.retail) || !sn.retailTyped)) {
+        if (!near(pv, sn.retail)) changes.push(`${label}: price typed ${gbp(sn.retail)} → ${gbp(pv)}`);
+        ov.retailOverride = pv;
+      } else if (p.f && sn.retailTyped) { delete ov.retailOverride; changes.push(`${label}: typed price removed, worked out from the margin again`); }
+    } else {
+      // a line added in Excel: it needs at least a product and a cost or a price
+      const product = xlStr(at(XL_COL.product).v), cost = xlNum(at(XL_COL.frameCost).v), price = xlNum(at(XL_COL.retail).v);
+      if (!product || (cost == null && price == null)) continue;
+      const r = makeRow(null); r.extra = product;
+      const ov = { product, location: xlStr(at(XL_COL.ref).v), frameCost: cost || 0, glassCost: xlNum(at(XL_COL.glassCost).v) || 0, qty: xlNum(at(XL_COL.qty).v) || 1, manDays: xlNum(at(XL_COL.manDays).v) || 0 };
+      ['width', 'height'].forEach(k => { const v = at(XL_COL[k]).v; if (xlStr(v)) ov[k] = xlNum(v) ?? xlStr(v); });
+      ['colour', 'config', 'trickle', 'cill', 'handle', 'glassSpec', 'additional'].forEach(k => { const v = xlStr(at(XL_COL[k]).v); if (v) ov[k] = v; });
+      const m = xlNum(at(XL_COL.margin).v); if (m != null && isFinite(pctToX(m * 100, mode))) ov.markup = pctToX(m * 100, mode);
+      if (price != null && !at(XL_COL.retail).f) ov.retailOverride = price;
+      r.ov = ov; ordered.push(r); added++;
+      changes.push(`New line added in Excel: ${product}${ov.location ? ' at ' + ov.location : ''}`);
+    }
+  }
+  const removed = j.rows.filter(r => !r.missing && !seen.has(r.id));
+  removed.forEach(r => changes.push(`Line ${r.ref || r.extra || r.id} deleted in Excel`));
+
+  // totals block: found by the hidden key in column Z, never by row number
+  const keyRow = {};
+  for (let rn = XL_HEAD + 1; rn <= ws.rowCount; rn++) { const k = xlStr(xlCell(ws.getRow(rn).getCell(XL_COL.id)).v); if (k.startsWith('#')) keyRow[k] = rn; }
+  const N = k => keyRow[k] ? xlCell(ws.getCell('N' + keyRow[k])) : { f: true, v: null };
+  const jt = j.totals || {}, set = {};
+  ['dayRate', 'surveyCost', 'petrolCost', 'accomCost', 'discountPct', 'installOverride'].forEach(k => { if (jt[k] !== undefined) set[k] = jt[k]; });
+  set.craneCost = jt.crane || 0;
+  const dPct = keyRow['#discount'] ? xlNum(xlCell(ws.getCell('M' + keyRow['#discount'])).v) : null;
+  if (dPct != null && !near(dPct * 100, jt.discountPct, 1e-6)) { set.discountPct = round2(dPct * 10000) / 100; changes.push(`Discount ${jt.discountPct}% → ${set.discountPct}%`); }
+  const crane = N('#crane'); if (!crane.f && xlNum(crane.v) != null && !near(crane.v, jt.crane)) { set.craneCost = xlNum(crane.v); changes.push(`Crane ${gbp(jt.crane)} → ${gbp(set.craneCost)}`); }
+  const inst = N('#install');
+  if (!inst.f && xlNum(inst.v) != null && (jt.installOverride !== '' || !near(inst.v, jt.install))) { set.installOverride = xlNum(inst.v); if (!near(inst.v, jt.install)) changes.push(`Installation ${gbp(jt.install)} → ${gbp(set.installOverride)} (quoted)`); }
+  else if (inst.f && jt.installOverride !== '' && jt.installOverride != null) { set.installOverride = ''; changes.push('Installation back to the calculated figure'); }
+  const yRows = {};
+  for (let rn = XL_HEAD + 1; rn <= ws.rowCount; rn++) { const y = xlStr(xlCell(ws.getRow(rn).getCell(25)).v); if (y) yRows[y] = rn; }
+  [['COST / MAN DAY', 'dayRate', 'Cost per man day'], ['SURVEY COST', 'surveyCost', 'Survey'], ['PETROL COST', 'petrolCost', 'Petrol'], ['ACCOMMODATION / SUBSISTENCE COST', 'accomCost', 'Accommodation']].forEach(([lab, k, l]) => {
+    if (!yRows[lab]) return; const v = xlNum(xlCell(ws.getCell('X' + yRows[lab])).v);
+    if (v != null && !near(v, jt[k])) { set[k] = v; changes.push(`${l} ${gbp(jt[k])} → ${gbp(v)}`); }
+  });
+
+  // nothing above can fail any more: make it the quote
+  // the same job keeps its upload history; a different job brings its own
+  if (state.jobId !== j.jobId) state.uploads = Array.isArray(j.uploads) ? j.uploads : [];
+  state.project = j.project; state.est = j.est; state.jobId = j.jobId || newJobId();
+  state.rows = [...ordered, ...j.rows.filter(r => r.missing)];
+  uid = Math.max(uid, 0, ...state.rows.map(r => r.id)) + 1;
+  Object.assign(S, set);
+  if (S.marginMode !== mode) { S.marginMode = mode; changes.push(`Margins read as ${mode === 'margin' ? '% of the selling price' : 'cost + %'}, as the file was written`); }
+
+  // a figure typed over the project total is a target: reach it through the discount, as the office does
+  const tot = N('#total'), tv = xlNum(tot.v);
+  if (!tot.f && tv != null && !near(tv, jt.total)) {
+    const T = projectTotals(computeAll().filter(l => !l.row.missing), S);
+    const pct = T.framesInc ? (1 - (tv - T.crane - T.install) / T.framesInc) * 100 : NaN;
+    if (isFinite(pct) && pct >= 0 && pct < 100) { S.discountPct = Math.round(pct * 1e6) / 1e6; changes.push(`Total project cost set to ${gbp(tv)}: discount is now ${S.discountPct.toFixed(2)}%`); }
+    else changes.push(`⚠ Total ${gbp(tv)} was not used: it would need a ${isFinite(pct) ? (pct < 0 ? 'negative discount (the total is above the full price)' : 'discount of 100% or more') : 'discount on nothing'}. Raise the margins instead.`);
+  }
+  saveSettings();
+  return { changes, added, removed: removed.length };
+}
+
+async function uploadEditedExcel(file) {
+  if (!window.ExcelJS) { banner('warn', 'Excel library still loading — try again in a moment.'); return; }
+  let res;
+  try {
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    if (!wb.getWorksheet(XL_DATA)) {
+      if (wb.worksheets.length === 1) { banner('info', 'That looks like a Logikal estimation rather than an edited quote, so it was loaded as one.'); return loadEstimationFile(file); }
+    }
+    if (state.rows.length && !confirm(`Replace the quote on screen with “${file.name}”?\n\nThe quote will match the Excel, including every change made in it.`)) return;
+    res = importWorkbook(wb, file.name);
+  } catch (e) { banner('warn', 'Could not read “' + esc(file.name) + '”: ' + esc(e.message || e)); return; }
+  noteUpload(file.name, 'Edited Excel');
+  render();
+  const c = res.changes;
+  banner(c.some(x => x.startsWith('⚠')) ? 'warn' : 'ok', `<b>${esc(file.name)}</b> uploaded at ${esc(new Date().toLocaleTimeString('en-GB'))}. ` + (c.length
+    ? `${c.length} change${c.length === 1 ? '' : 's'} from Excel applied:<br>` + c.slice(0, 12).map(esc).join('<br>') + (c.length > 12 ? `<br>… and ${c.length - 12} more` : '')
+    : 'Nothing was changed in it, so the quote is as it was downloaded.'));
+}
+/* which kind of .xlsx is this? an edited quote carries the RENKA DATA sheet */
+async function isEditedQuote(file) {
+  try { const z = await JSZip.loadAsync(await file.arrayBuffer()); const w = z.file('xl/workbook.xml'); return !!w && /name="RENKA DATA"/.test(await w.async('string')); }
+  catch (e) { return false; }
+}
+async function openSpreadsheet(file) { if (await isEditedQuote(file)) uploadEditedExcel(file); else loadEstimationFile(file); }
+$('#xlInput').addEventListener('change', e => { const f = e.target.files[0]; if (f) uploadEditedExcel(f); e.target.value = ''; });
+
+/* ---------- the Excel tab: the workbook drawn as a grid, editable where Excel would be ----------
+   It draws the very workbook "Excel" downloads. An edit is written into that workbook and read
+   back through importWorkbook, the same road an edited file takes when it is uploaded, so what
+   happens here is exactly what would happen in Excel. */
+const XL = { wb: null, rows: null, sheet: XL_SHEET, dirty: true, timer: 0, sel: null, msg: '' };
+function xlDirty() { XL.dirty = true; if (state.view === 'xl') { clearTimeout(XL.timer); XL.timer = setTimeout(renderXl, 250); } }
+const colLetter = n => { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+function xlText(cell) {
+  const { v } = xlCell(cell); if (v == null || v === '') return '';
+  if (typeof v === 'number') {
+    const f = cell.numFmt || '';
+    if (f.includes('%')) return (v * 100).toFixed(1) + '%';
+    if (f.includes('£')) return gbp(v);
+    return String(Math.round(v * 100) / 100);
+  }
+  return String(v);
+}
+/* which cells can be changed here: the yellow inputs, and the words on each line */
+function xlEditable(r, c) {
+  if (XL.sheet !== XL_SHEET || !XL.rows) return false;
+  const R = XL.rows;
+  if (r >= R.first && r <= R.last) return XL_YELLOW.has(c) || [2, 3, 4, 5, 6, 7, 8, 9, 10, 19, 20].includes(c);
+  if (c === 13 && r === R.rDisc) return true;
+  if (c === 14 && [R.rDisc, R.rCrane, R.rInst, R.rTotal].includes(r)) return true;
+  if (c === 24 && r >= R.rCrane && r <= R.rCrane + 3) return true;
+  return false;
+}
+async function renderXl() {
+  const box = $('#xlView');
+  if (!state.rows.length) { box.innerHTML = '<div class="xlv__msg">Load an estimation first: the workbook appears here.</div>'; return; }
+  if (!window.ExcelJS) { box.innerHTML = '<div class="xlv__msg">Excel library still loading…</div>'; setTimeout(renderXl, 600); return; }
+  const sc = box.querySelector('.xlv__scroll'), keep = sc ? [sc.scrollLeft, sc.scrollTop] : null;
+  if (XL.dirty || !XL.wb) { const b = await buildWorkbook(); XL.wb = b.wb; XL.rows = b.rows; XL.dirty = false; }
+  const sheets = XL.wb.worksheets.filter(w => w.state !== 'veryHidden' && w.state !== 'hidden');
+  if (!sheets.some(w => w.name === XL.sheet)) XL.sheet = XL_SHEET;
+  const ws = XL.wb.getWorksheet(XL.sheet);
+  // geometry, in screen pixels: Excel widths are characters, heights are points
+  const nCols = Math.max(ws.columnCount, 1), nRows = Math.min(ws.rowCount, 600);
+  const cw = [0], ch = [0];
+  for (let c = 1; c <= nCols; c++) { const col = ws.getColumn(c); cw[c] = col.hidden ? 0 : Math.round((col.width || 8.43) * 7 + 5); }
+  for (let r = 1; r <= nRows; r++) { const row = ws.getRow(r); ch[r] = row.hidden ? 0 : Math.round((row.height || 15) * 4 / 3); }
+  const RH = 40, CH = 20, left = [RH], top = [CH];
+  left[1] = RH; for (let c = 2; c <= nCols + 1; c++) left[c] = left[c - 1] + cw[c - 1];
+  top[1] = CH; for (let r = 2; r <= nRows + 1; r++) top[r] = top[r - 1] + ch[r - 1];
+  const W = left[nCols + 1], H = top[nRows + 1];
+  // merged areas: the top-left cell spans them, the rest are not drawn
+  const covered = new Set(), span = {};
+  Object.values(ws._merges || {}).forEach(m => {
+    const g = m.model || m; if (!g || !g.top) return;
+    span[g.top + ',' + g.left] = g;
+    for (let r = g.top; r <= g.bottom; r++) for (let c = g.left; c <= g.right; c++) if (r !== g.top || c !== g.left) covered.add(r + ',' + c);
+  });
+  let html = '';
+  for (let c = 1; c <= nCols; c++) if (cw[c]) html += `<div class="h col" style="left:${left[c]}px;width:${cw[c]}px;top:0">${colLetter(c)}</div>`;
+  for (let r = 1; r <= nRows; r++) {
+    if (!ch[r]) continue;
+    html += `<div class="h" style="left:0;width:${RH}px;top:${top[r]}px;height:${ch[r]}px">${r}</div>`;
+    const row = ws.getRow(r);
+    for (let c = 1; c <= nCols; c++) {
+      if (!cw[c] || covered.has(r + ',' + c)) continue;
+      const cell = row.getCell(c), g = span[r + ',' + c];
+      const w = g ? left[Math.min(g.right, nCols) + 1] - left[c] : cw[c], h = g ? top[Math.min(g.bottom, nRows) + 1] - top[r] : ch[r];
+      const txt = xlText(cell), ed = xlEditable(r, c);
+      if (!txt && !ed && !(cell.fill && cell.fill.fgColor) && !cell.border) continue;
+      const st = [`left:${left[c]}px`, `top:${top[r]}px`, `width:${w}px`, `height:${h}px`];
+      const fg = cell.fill && cell.fill.fgColor && cell.fill.fgColor.argb;
+      const yellow = ed && fg && fg.slice(2).toUpperCase() === XL_IN;   // a figure to change; words can be changed too, without the colour
+      if (fg && !yellow) st.push(`background:#${fg.slice(2)}`);
+      if (cell.border && (cell.border.top || cell.border.left)) st.push('border:1px solid #555');
+      const f = cell.font || {};
+      if (f.bold) st.push('font-weight:700');
+      if (f.size) st.push(`font-size:${Math.max(7, Math.min(30, f.size * 1.2))}px`);
+      if (f.color && f.color.argb) st.push(`color:#${f.color.argb.slice(2)}`);
+      const al = cell.alignment || {};
+      st.push(`justify-content:${al.horizontal === 'center' ? 'center' : al.horizontal === 'right' || (typeof xlCell(cell).v === 'number' && !al.horizontal) ? 'flex-end' : 'flex-start'}`);
+      st.push(`align-items:${al.vertical === 'middle' ? 'center' : al.vertical === 'top' ? 'flex-start' : 'flex-end'}`);
+      if (al.horizontal === 'center') st.push('text-align:center');
+      if (!al.wrapText && !g) st.push('white-space:pre;overflow:visible');   // spills into empty neighbours, as Excel does
+      html += `<div class="c${ed ? (yellow ? ' edit' : ' editt') : ''}" data-a="${r},${c}" style="${st.join(';')}">${esc(txt)}</div>`;
+    }
+  }
+  // pictures: drawings in the IMAGE column, the logo, the footer marks
+  (ws.getImages ? ws.getImages() : []).forEach(im => {
+    const img = XL.wb.getImage(Number(im.imageId)), tl = im.range && im.range.tl; if (!img || !tl) return;
+    const nc = tl.nativeCol ?? Math.floor(tl.col || 0), nr = tl.nativeRow ?? Math.floor(tl.row || 0);
+    if (nc + 1 > nCols || nr + 1 > nRows) return;
+    const x = left[nc + 1] + (tl.nativeColOff || 0) / 9525, y = top[nr + 1] + (tl.nativeRowOff || 0) / 9525;
+    const ext = im.range.ext || { width: 120, height: 90 };
+    const b = String(img.base64 || ''), src = b.startsWith('data:') ? b : 'data:image/' + (img.extension || 'png') + ';base64,' + b;
+    html += `<img src="${src}" style="left:${x}px;top:${y}px;width:${ext.width}px;height:${ext.height}px" alt="">`;
+  });
+  const tabs = sheets.map(w => `<button data-xlsheet="${esc(w.name)}" class="${w.name === XL.sheet ? 'on' : ''}">${esc(w.name)}</button>`).join('');
+  box.innerHTML = `<div class="xlv__bar"><span class="ref" id="xlRef">${XL.sel ? colLetter(XL.sel[1]) + XL.sel[0] : ''}</span><span class="fx" id="xlFx">${XL.sheet === XL_SHEET ? (XL.msg ? esc(XL.msg) : 'Click a yellow cell to change it.') : 'This sheet is worked out from the working sheet: change figures on the QUOTE WORKING SHEET tab.'}</span></div>
+    <div class="xlv__scroll"><div class="xlv__grid" style="width:${W}px;height:${H}px">${html}</div></div>
+    <div class="xlv__tabs">${tabs}</div>`;
+  const ns = box.querySelector('.xlv__scroll'); if (keep && ns) { ns.scrollLeft = keep[0]; ns.scrollTop = keep[1]; }
+}
+/* the formula bar: what is in the cell, not just what it shows */
+function xlShow(r, c) {
+  const ws = XL.wb.getWorksheet(XL.sheet), cell = ws.getRow(r).getCell(c), x = cell.value;
+  XL.sel = [r, c]; $('#xlRef').textContent = colLetter(c) + r;
+  $('#xlFx').textContent = x && typeof x === 'object' && x.formula ? '=' + x.formula : xlText(cell) || (xlEditable(r, c) ? '(empty)' : '');
+  document.querySelectorAll('.xlv__grid .c.sel').forEach(e => e.classList.remove('sel'));
+  const el = document.querySelector(`.xlv__grid .c[data-a="${r},${c}"]`); if (el) el.classList.add('sel');
+}
+function xlEdit(el) {
+  const [r, c] = el.dataset.a.split(',').map(Number), ws = XL.wb.getWorksheet(XL.sheet), cell = ws.getRow(r).getCell(c), { v } = xlCell(cell);
+  const pct = (cell.numFmt || '').includes('%');
+  el.textContent = v == null ? '' : typeof v === 'number' ? String(pct ? Math.round(v * 10000) / 100 : Math.round(v * 100) / 100) : String(v);
+  el.contentEditable = 'true'; el.focus();
+  const rg = document.createRange(); rg.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(rg);
+  let done = false;
+  const commit = keep => {
+    if (done) return; done = true; el.contentEditable = 'false';
+    if (!keep) { renderXl(); return; }
+    const raw = el.textContent.trim(), R = XL.rows, numeric = pct || (cell.numFmt || '').includes('£') || [XL_COL.qty, XL_COL.manDays, XL_COL.width, XL_COL.height].includes(c);
+    let val;
+    if (raw === '') {
+      // emptied: a worked-out figure goes back to its formula, anything else is blanked
+      if (c === XL_COL.retail && r >= R.first && r <= R.last) val = { formula: retailFormula(r) };
+      else if (c === 14 && r === R.rInst) val = { formula: `X${R.rCrane + 4}` };
+      else if (c === 14 && r === R.rTotal) val = { formula: `N${R.rAfter}+N${R.rCrane}+N${R.rInst}` };
+      else if (c === 14 && r === R.rDisc) val = { formula: `N${R.rTot}*M${R.rDisc}` };
+      else val = numeric ? 0 : '';
+    } else if (numeric) {
+      const n = num(raw); if (n == null) { XL.msg = `“${raw}” is not a number — nothing changed.`; renderXl(); return; }
+      val = pct ? n / 100 : n;
+    } else val = raw;
+    cell.value = val;
+    try {
+      const res = importWorkbook(XL.wb, null, { fromViewer: true });
+      XL.msg = res.changes.length ? 'Updated: ' + res.changes[res.changes.length - 1] : 'No change.';
+    } catch (e) { XL.msg = 'Could not apply: ' + (e.message || e); }
+    XL.dirty = true; render(); renderXl();
+  };
+  el.addEventListener('blur', () => commit(true), { once: true });
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); el.blur(); }
+    if (e.key === 'Escape') { e.preventDefault(); commit(false); }
+  });
+}
+document.addEventListener('click', e => {
+  const tab = e.target.closest('[data-xlsheet]'); if (tab) { XL.sheet = tab.dataset.xlsheet; XL.sel = null; renderXl(); return; }
+  if (e.target.id === 'xlDownload') { downloadExcel(); return; }
+  const c = e.target.closest('.xlv__grid .c'); if (!c || c.isContentEditable) return;
+  const [r, col] = c.dataset.a.split(',').map(Number); xlShow(r, col);
+  if (c.classList.contains('edit') || c.classList.contains('editt')) xlEdit(c);
+});
+
 function toPng(src) {
   return new Promise(res => {
     const img = new Image();
@@ -1381,60 +2015,6 @@ function toPng(src) {
     img.onerror = () => res(null); img.src = src;
   });
 }
-$('#btnExcel').onclick = async () => {
-  if (!window.ExcelJS) { banner('warn', 'Excel library still loading — try again in a moment.'); return; }
-  const lines = computeAll().filter(l => !l.row.missing), T = projectTotals(lines, S), P = state.project;
-  const wb = new ExcelJS.Workbook(); wb.creator = 'Quote Builder';
-  const ws = wb.addWorksheet('QUOTE WORKING SHEET', { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-  const hdr = ['FRAME NO.', 'LOCATION / REF', 'PRODUCT DESCRIPTION', 'FRAME WIDTH', 'FRAME HEIGHT', 'FRAME COLOUR', 'CONFIGURATION', 'TRICKLE VENTS', 'CILL', 'HANDLE / LOCK COLOUR & LOCATION', 'Frame cost', 'Glass cost', 'Total cost', 'RETAIL PRICE (EXC VAT)', 'DRAIN SYSTEM', 'DRAIN RETAIL PRICE (EXC VAT)', 'TRIPLE GLAZING ADDITIONAL COST (TO US)', 'TRIPLE GLAZING ADDITIONAL COST (EXC VAT)', 'NON STANDARD GLASS SPECIFICATIONS', 'ADDITIONAL ELEMENTS / COSTS TO BE FINALISED POST SURVEY', 'IMAGE', 'MARKUP', 'QTY', 'MAN DAYS'];
-  const widths = [8, 22, 24, 10, 10, 24, 34, 12, 14, 22, 10, 10, 11, 14, 10, 12, 12, 12, 16, 30, 24, 8, 6, 9];
-  widths.forEach((w, i) => ws.getColumn(i + 1).width = w);
-  ws.mergeCells('A1:U1'); ws.getCell('A1').value = 'QUOTATION'; ws.getCell('A1').font = xFont(28, { color: { argb: 'FFFFFFFF' } }); ws.getCell('A1').fill = xFill(GREY_B); ws.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }; ws.getRow(1).height = 50;
-  { const lg = await logoOnGrey(); if (lg) ws.addImage(wb.addImage({ base64: lg.data, extension: 'png' }), { tl: { col: 0.15, row: 0.12 }, ext: { width: 46 * lg.w / lg.h, height: 46 } }); }
-  ws.getCell('U2').value = P.date; ws.getCell('U2').font = xFont(8);
-  [['A3', versionLine(P)], ['A4', P.client], ['A5', P.projectName ? 'Project: ' + P.projectName : ''], ['A6', (P.address || '').replace(/\n/g, ', ')], ['A7', (P.tel ? 'TEL: ' + P.tel + '   ' : '') + 'INSTALLATION DATE: ' + (P.installDate || 'TBC')], ['A9', S.glazingLine], ['A10', S.illustrationLine]].forEach(([c, v]) => ws.getCell(c).value = v || '');
-  const H = 12; ws.getRow(H).values = hdr;
-  ws.getRow(H).eachCell(c => { c.font = xFont(8); c.fill = xFill(c.col === 20 ? YELLOW : c.col === 21 ? GREY_B : GREY_D); c.border = xBox; c.alignment = { wrapText: true, horizontal: 'center', vertical: 'middle' }; });
-  ws.getRow(H).height = 42;
-  let r = H + 1;
-  for (const L of lines) {
-    const v = L.v, row = ws.getRow(r);
-    row.values = [isNaN(+v.frameNo) ? v.frameNo : +v.frameNo, [v.location, L.row.ref].filter(Boolean).join(' - '), v.product, v.width === '' ? '' : (isNaN(+v.width) ? v.width : +v.width), v.height === '' ? '' : (isNaN(+v.height) ? v.height : +v.height), v.colour, v.config, v.trickle, v.cill, v.handle, +v.frameCost || 0, +v.glassCost || 0, null, null, +v.drainCost || 0, null, +v.tripleCost || 0, null, v.glassSpec, v.additional, '', +v.markup || 0, +v.qty || 1, +v.manDays || 0];
-    row.getCell(13).value = { formula: `(K${r}+L${r})*W${r}`, result: L.total };
-    row.getCell(14).value = 'retailOverride' in L.row.ov ? L.retail : { formula: `M${r}*V${r}`, result: L.retail };
-    row.getCell(16).value = { formula: `O${r}*${S.extrasMarkup}`, result: L.drainRetail };
-    row.getCell(18).value = { formula: `Q${r}*${S.extrasMarkup}`, result: L.tripleRetail };
-    [11, 12, 13, 14, 15, 16, 17, 18].forEach(c => row.getCell(c).numFmt = '£#,##0.00');
-    for (let ci = 1; ci <= hdr.length; ci++) { const c = row.getCell(ci); c.alignment = { wrapText: true, horizontal: 'center', vertical: 'middle' }; c.font = xFont(9); c.border = xBox; if ([4, 5, 14].includes(ci)) c.fill = xFill(GREY_D); }
-    row.height = 96;
-    const png = await toPng(drawingOf(L.row, v));
-    if (png) { const id = wb.addImage({ base64: png.data, extension: 'png' }); const k = Math.min(160 / png.w, 120 / png.h); ws.addImage(id, { tl: { col: 20.05, row: r - 1 + 0.05 }, ext: { width: png.w * k, height: png.h * k }, editAs: 'oneCell' }); }
-    r++;
-  }
-  const first = H + 1, last = r - 1; r++;
-  const put = (label, col, formula, result, fmt = '£#,##0.00', note = 'PLUS VAT') => { ws.getCell('A' + r).value = label; ws.getCell('A' + r).font = { bold: true }; const c = ws.getCell(col + r); c.value = formula ? { formula, result } : result; c.numFmt = fmt; c.font = { bold: true }; if (note) ws.getCell('U' + r).value = note; return r++; };
-  const rTot = put('TOTAL GLAZED FRAME COST', 'N', `SUM(N${first}:N${last})`, T.frames);
-  ws.getCell('M' + rTot).value = { formula: `SUM(M${first}:M${last})`, result: T.cost }; ws.getCell('M' + rTot).numFmt = '£#,##0.00';
-  ws.getCell('X' + rTot).value = { formula: `SUM(X${first}:X${last})`, result: T.manDays }; ws.getCell('Y' + rTot).value = 'TOTAL MAN DAYS';
-  const rDisc = put(S.discountLabel.toUpperCase() + ' (' + S.discountPct + '%)', 'N', `N${rTot}*${S.discountPct / 100}`, T.discount);
-  const rAfter = put('TOTAL GLAZED FRAME COST (AFTER PROJECT DISCOUNT)', 'N', `N${rTot}-N${rDisc}`, T.afterDisc);
-  const rCrane = put('CRANE / POWERED LIFTING EQUIPMENT', 'N', null, T.crane);
-  ws.getCell('X' + rCrane).value = S.dayRate; ws.getCell('Y' + rCrane).value = 'COST / MAN DAY';
-  ws.getCell('X' + (rCrane + 1)).value = Number(S.surveyCost) || 0; ws.getCell('Y' + (rCrane + 1)).value = 'SURVEY COST';
-  ws.getCell('X' + (rCrane + 2)).value = Number(S.petrolCost) || 0; ws.getCell('Y' + (rCrane + 2)).value = 'PETROL COST';
-  ws.getCell('X' + (rCrane + 3)).value = Number(S.accomCost) || 0; ws.getCell('Y' + (rCrane + 3)).value = 'ACCOMMODATION / SUBSISTENCE COST';
-  ws.getCell('X' + (rCrane + 4)).value = { formula: `X${rTot}*X${rCrane}+X${rCrane + 1}+X${rCrane + 2}+X${rCrane + 3}`, result: T.installCalc }; ws.getCell('Y' + (rCrane + 4)).value = 'TOTAL CALCULATED INSTALL COST';
-  const rInst = put('INSTALLATION COST', 'N', S.installOverride === '' ? `X${rCrane + 4}` : null, T.install);
-  put('TOTAL PROJECT COST (INC INSTALLATION)', 'N', `N${rAfter}+N${rCrane}+N${rInst}`, T.total);
-  r++; ws.getCell('A' + r).value = `SUPPLY ONLY - DELIVERY COST - ${gbp(S.deliveryCost)} + VAT (DELIVERY TO KERBSIDE)`; r++;
-  ws.getCell('A' + r).value = S.installTerms; ws.mergeCells(`A${r}:U${r}`); ws.getCell('A' + r).alignment = { wrapText: true, vertical: 'top' }; ws.getRow(r).height = 60;
-  if (state.est) { r += 2; ws.getCell('A' + r).value = 'Source estimation: ' + state.est.fileName + ' (' + (state.est.project.date || '') + ')'; ws.getCell('A' + r).font = { italic: true, size: 8, color: { argb: 'FF777777' } }; }
-  ws.views = [{ state: 'frozen', ySplit: H }];
-  await addCustomerSheet(wb, 'QUOTATION', lines, T, false);
-  await addCustomerSheet(wb, 'ORDER CONFIRMATION', lines, T, true);
-  const buf = await wb.xlsx.writeBuffer();
-  download(safeName(state.project.projectName) + ' ' + (state.project.version || 'Quotation') + '.xlsx', new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-};
 
 /* shared bits for the downloadable outputs */
 /* logo with its white background knocked out, so it sits on the grey banner like the template */
@@ -1844,13 +2424,6 @@ async function buildProposalPdf(isOrder, orient) {
   y = colHeads(y); colTop = y;
   const imgs = new Map(); for (const L of lines) imgs.set(L.row.id, await linePng(L));
   const groupTotal = p => { const ls = lines.filter(l => (l.v.product || 'Other') === p); return `${count(ls)} element${count(ls) === 1 ? '' : 's'} · ${money(ls.reduce((s, l) => s + l.retail, 0))}`; };
-  const groupBar = (p, yy, cont) => {
-    const g = G(); doc.setFillColor(...INK); doc.rect(g.x0, yy, COLW, 6.4, 'F');
-    const right = groupTotal(p); font(5.6); const rw = doc.getTextWidth(right.toUpperCase()) + .45 * right.length;
-    let name = p + (cont ? '  continued' : ''); font(5.8, true); while (name.length > 4 && doc.getTextWidth(name.toUpperCase()) + .45 * name.length > COLW - rw - 10) name = name.slice(0, -2);
-    spaced(name, g.x0 + 3, yy + 4.3, { bold: true, color: WHITE, size: 5.8 }); spaced(right, g.R - 3, yy + 4.3, { color: WHITE, size: 5.6, align: 'right' });
-    return yy + 10;
-  };
   const specOf = L => {
     const v = L.v, out = [], has = s => s && !/^(n\/?a|no|none|-)$/i.test(String(s).trim());
     out.push(['Size', `${v.width ?? ''} × ${v.height ?? ''} mm`]);
@@ -1897,20 +2470,29 @@ async function buildProposalPdf(isOrder, orient) {
     }
     return Math.max(ty - y0, g.DW * .8 + 3) + 5;
   };
-  const nextSlot = p => {
+  const nextSlot = () => {
     if (col < NCOL - 1) { col++; y = colTop; }
     else { y = newPage('02 Frame schedule'); col = 0; y = colHeads(y); colTop = y; }
-    if (p) y = groupBar(p, y, true);
+  };
+  /* every frame carries its own headline bar, and the bar and its card move together: a
+     headline is never left at the foot of a page with its frame on the next */
+  const frameBar = (p, i, n, yy) => {
+    const g = G(); doc.setFillColor(...INK); doc.rect(g.x0, yy, COLW, 6.4, 'F');
+    const right = n > 1 ? `${i + 1} of ${n}` : groupTotal(p); font(5.6); const rw = doc.getTextWidth(right.toUpperCase()) + .45 * right.length;
+    let name = p; font(5.8, true); while (name.length > 4 && doc.getTextWidth(name.toUpperCase()) + .45 * name.length > COLW - rw - 10) name = name.slice(0, -2);
+    spaced(name, g.x0 + 3, yy + 4.3, { bold: true, color: WHITE, size: 5.8 }); spaced(right, g.R - 3, yy + 4.3, { color: WHITE, size: 5.6, align: 'right' });
+    return yy + 10;
   };
   for (const p of products) {
     const ls = lines.filter(l => (l.v.product || 'Other') === p);
-    if (y + 10 + card(ls[0], 0, G(), false) > BOT) nextSlot(null);
-    y = groupBar(p, y, false);
-    for (const L of ls) {
-      if (y + card(L, 0, G(), false) > BOT) nextSlot(p);
+    for (let i = 0; i < ls.length; i++) {
+      const L = ls[i];
+      if (y + 10 + card(L, 0, G(), false) > BOT) nextSlot(null);
+      y = frameBar(p, i, ls.length, y);
       const g = G(), h = card(L, y, g, true);
-      y += h; rule(g.x0 + 11, y - 3, g.R, [210, 208, 202]);
+      y += h;
     }
+    y += 2;
   }
   if (y + 12 > BOT) nextSlot(null);
   { const g = G(); doc.setFillColor(...INK); doc.rect(g.x0, y, COLW, 9, 'F'); spaced(land ? 'Total glazed products · ex VAT' : 'Total glazed products · excluding VAT', g.x0 + 4, y + 5.8, { bold: true, color: WHITE, size: 5.8 }); txt(money(T.framesInc), g.R - 4, y + 6, { size: 10, color: WHITE, align: 'right' }); }
