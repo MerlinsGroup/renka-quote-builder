@@ -844,6 +844,7 @@ async function loadEstimationFile(file) {
   }
   const fresh = !state.rows.length;
   applyEstimation(parsed, file.name);
+  xvPrepare();
   done(fresh ? 'New quote loaded' : 'Revised estimation loaded', `<b>${esc(state.project.projectName || 'Quote')}</b>: ${activeRows().length} lines from “${esc(file.name)}”.<br>The PDF and Excel will be named “${esc(outName())}”.`);
 }
 const sameName = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
@@ -855,7 +856,7 @@ function resetJob() {
   state.project = { client: '', projectName: '', address: '', tel: '', quoteRef: '', date: todayStr(), installDate: '', version: 'Quotation V1' };
   state.est = null; state.rows = []; uid = 1;
   S.installOverride = ''; S.craneCost = 0; S.discountPct = DEFAULT_SETTINGS.discountPct; saveSettings();
-  $('#banners').innerHTML = ''; XV.wb = null; XV.file = null; syncDl();
+  $('#banners').innerHTML = ''; Object.assign(XV, { wb: null, file: null, name: '', at: '', sheet: '', sig: '', src: '', edited: false, msg: '' }); syncDl();
 }
 /* a yes / no question asked in the page, not by the browser. Resolves true for yes. */
 function ask(title, html, yes = 'Yes', no = 'Cancel') {
@@ -892,8 +893,8 @@ async function loadEditedExcel(file) {
     if (!ws || !/FRAME NO/i.test(String(ws.getCell('A12').value || ''))) throw new Error('this is not an Excel downloaded from this portal (no QUOTE WORKING SHEET). For a Logikal estimation use “Load estimation”.');
     if (state.rows.length && !await ask('Load this Excel?', `The quote on screen will be replaced with “${esc(file.name)}”.`, 'Yes, load it')) return;
     quoteFromWorkbook(wb);
-    Object.assign(XV, { wb, file, name: file.name, at: new Date().toLocaleString('en-GB'), sheet: 'QUOTE WORKING SHEET', edited: false });
-    render(); syncDl();
+    Object.assign(XV, { wb, file, name: file.name, at: new Date().toLocaleString('en-GB'), sheet: 'QUOTE WORKING SHEET', edited: false, src: 'file', sig: quoteSig() });
+    render(); XV.sig = quoteSig(); syncDl();
     $('#tabs').querySelector('[data-v="xl"]').click();   // straight to the file itself
     const T = projectTotals(computeAll().filter(l => !l.row.missing), S);
     done('Edited Excel loaded', `<b>${esc(state.project.projectName || 'Quote')}</b>: ${state.rows.length} lines from “${esc(file.name)}”, total <b>${gbp(T.total)}</b> + VAT.<br>Here it is in the Excel sheet viewer. Click a cell on the QUOTE WORKING SHEET to change it; the quote and PDF follow.`);
@@ -964,11 +965,33 @@ function quoteFromWorkbook(wb) {
   }
 }
 /* ---------- Excel sheet viewer: the uploaded Excel itself, read only, sheet by sheet ---------- */
-const XV = { wb: null, name: '', at: '', sheet: '' };
+const XV = { wb: null, name: '', at: '', sheet: '', sig: '', src: '' };
+/* what the quote is now: when it no longer matches the Excel in the viewer, the Excel is made again */
+const quoteSig = () => JSON.stringify([state.project, state.rows.map(r => [r.id, r.ov, r.missing, r.xl, r.est && r.est.ref]), ['discountPct', 'craneCost', 'installOverride', 'dayRate', 'surveyCost', 'petrolCost', 'accomCost', 'defaultMarkup', 'extrasMarkup'].map(k => S[k])]);
+let xvBuilding = null;
+/* make the viewer's Excel from the quote, unless it already shows this quote */
+async function xvPrepare() {
+  if (!activeRows().length) return;
+  if (XV.wb && XV.sig === quoteSig()) return;
+  if (xvBuilding) return xvBuilding;
+  xvBuilding = (async () => {
+    for (let i = 0; i < 40 && !window.ExcelJS; i++) await new Promise(r => setTimeout(r, 250));
+    if (!window.ExcelJS) return;
+    const sig = quoteSig(), wb = await buildWorkbook();
+    const was = XV.file && XV.wb;   // an uploaded file changed on the working sheet since
+    Object.assign(XV, { wb, sig, src: 'quote', name: XV.file ? XV.name : outName() + '.xlsx', at: XV.at || new Date().toLocaleString('en-GB'), sheet: XV.sheet || 'QUOTE WORKING SHEET', edited: XV.edited || !!was });
+  })();
+  try { await xvBuilding; } finally { xvBuilding = null; }
+}
 function renderXlViewer() {
   const box = $('#xlView'); if (!box) return;
+  if (activeRows().length && (!XV.wb || XV.sig !== quoteSig())) {
+    if (!box.querySelector('.xv-wrap')) box.innerHTML = '<div class="xv-empty"><p>Making the Excel for this quote…</p></div>';
+    xvPrepare().then(() => { if (state.view === 'xl' && XV.wb && XV.sig === quoteSig()) renderXlViewer(); });
+    return;
+  }
   if (!XV.wb) {
-    box.innerHTML = `<div class="xv-empty"><h3>No edited Excel loaded</h3><p>Use <b>Load edited Excel</b> to upload the Excel you changed. It shows here exactly as it is in the file, and the quote and PDF are made from its numbers.</p><label class="btn primary">Load edited Excel<input type="file" accept=".xlsx" hidden onchange="if(this.files[0])loadEditedExcel(this.files[0]);this.value=''"></label></div>`;
+    box.innerHTML = `<div class="xv-empty"><h3>No quote yet</h3><p>Load a Logikal estimation or an edited Excel on the Working sheet. Its Excel shows here straight away, and you can change it here too.</p><label class="btn primary">Load edited Excel<input type="file" accept=".xlsx" hidden onchange="if(this.files[0])loadEditedExcel(this.files[0]);this.value=''"></label></div>`;
     return;
   }
   const sheets = XV.wb.worksheets.filter(w => w.state !== 'hidden' && w.state !== 'veryHidden');
@@ -977,7 +1000,7 @@ function renderXlViewer() {
   const canEdit = ws.name === 'QUOTE WORKING SHEET';
   box.innerHTML = `<div class="xv-bar"><div class="xv-tabs">${sheets.map(w => `<button data-xvs="${esc(w.name)}" class="${w === ws ? 'on' : ''}">${esc(w.name)}</button>`).join('')}</div>
     <button class="btn primary" data-dl>Download Excel</button>
-    <div class="f"><b>${esc(XV.name)}</b> · uploaded ${esc(XV.at)}${XV.edited ? ' · <b>edited here</b>' : ''} · ${canEdit ? 'click a cell outlined in blue to change it; the quote, totals and PDF follow.' : 'read only: change figures on the QUOTE WORKING SHEET.'}</div></div>
+    <div class="f"><b>${esc(XV.name)}</b> · ${XV.file ? 'uploaded ' + esc(XV.at) + (XV.edited ? ' · <b>with your changes</b>' : '') : 'the Excel for this quote'} · ${canEdit ? 'click a cell outlined in blue to change it; the quote, totals and PDF follow.' : 'read only: change figures on the QUOTE WORKING SHEET.'}</div></div>
     <div class="xv-msg" id="xvMsg">${XV.msg || ''}</div>
     <div class="xv-wrap">${sheetTable(XV.wb, ws, canEdit ? xvEditable(ws) : null)}</div>`;
   if (keep) { const w = box.querySelector('.xv-wrap'); w.scrollTop = keep[0]; w.scrollLeft = keep[1]; }
@@ -1016,7 +1039,7 @@ async function xvCommit(td) {
     quoteFromWorkbook(XV.wb);
     Object.assign(XV, keep, { edited: true });
     render();
-    XV.wb = await buildWorkbook();
+    XV.wb = await buildWorkbook(); XV.sig = quoteSig(); XV.src = 'quote';
     const T = projectTotals(computeAll().filter(l => !l.row.missing), S);
     XV.msg = `✓ ${esc(ws.getColumn(c).letter + r)} ${esc(head.slice(0, 40))} → “${esc(text)}”. Quote updated: total ${gbp(T.total)} + VAT.`;
   } catch (e) { Object.assign(XV, keep); XV.msg = '<span style="color:#b00">That change could not be used: ' + esc(e.message || e) + '</span>'; }
@@ -1127,7 +1150,7 @@ function syncDl() {
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-dl]'); if (!b) return;
   const k = dlKind(), label = b.textContent;
-  if (k === 'excel' && XV.wb && XV.edited) { const buf = await XV.wb.xlsx.writeBuffer(); download(XV.name, new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); return; }
+  if (k === 'excel' && XV.wb && XV.src === 'quote') { const buf = await XV.wb.xlsx.writeBuffer(); download(XV.name, new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); return; }
   if (k === 'excel' && XV.file) { download(XV.file.name, XV.file); return; }
   if (k === 'excel') return $('#btnExcel').click();
   if (!window.jspdf || !window.jspdf.jsPDF || !window.jspdf.jsPDF.API.autoTable) { banner('warn', 'PDF library still loading — try again in a moment.'); return; }
@@ -1722,8 +1745,9 @@ async function openJob(f) {
     const j = JSON.parse(await f.text());
     if (j.app !== 'logikal-quote-builder') throw new Error('not a quote-builder job file');
     state.project = j.project; state.est = j.est; state.rows = j.rows; uid = Math.max(0, ...state.rows.map(r => r.id)) + 1;
+    Object.assign(XV, { wb: null, file: null, name: '', at: '', sheet: '', sig: '', src: '', edited: false, msg: '' });
     if (j.settings && await ask('Pricing & rules', 'Use the pricing & rules saved with this job, or keep your current settings?', 'Use the job’s', 'Keep mine')) { S = Object.assign(clone(DEFAULT_SETTINGS), j.settings); saveSettings(); }
-    banner('ok', 'Opened job “' + esc(f.name) + '”. Drop a revised estimation to update it.'); render();
+    banner('ok', 'Opened job “' + esc(f.name) + '”. Drop a revised estimation to update it.'); render(); xvPrepare();
   } catch (err) { banner('warn', 'Could not open job: ' + esc(err.message)); }
 }
 
