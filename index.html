@@ -245,6 +245,10 @@ table.ws .src b{color:var(--ink);font-weight:700}
 .modal.on{display:flex}
 .modal .box{background:#fff;border-radius:3px;padding:22px 24px;max-width:min(1000px,95vw);max-height:92vh;overflow:auto;box-shadow:0 30px 60px -20px rgba(20,22,24,.45)}
 .modal img{max-width:100%;max-height:72vh;display:block;margin:0 auto}
+.donebox{text-align:center;max-width:440px;padding:6px 10px}
+.donebox h3{margin:8px 0 6px;font-size:18px}
+.donebox p{margin:0 0 16px;line-height:1.5}
+.donetick{width:46px;height:46px;border-radius:50%;background:#2e7d32;color:#fff;font-size:26px;line-height:46px;margin:0 auto}
 .cpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px}
 .cptile{appearance:none;text-align:left;background:#fff;border:1px solid var(--line);border-radius:3px;padding:0 0 10px;overflow:hidden;color:var(--soft)}
 .cptile span{display:block;height:110px;background:#e9e8e4 center/cover no-repeat;margin-bottom:8px}
@@ -353,6 +357,8 @@ table.ws .src b{color:var(--ink);font-weight:700}
     <span class="sp"></span>
     <div class="actions">
       <label class="btn ghost" title="Load a Logikal estimation export (.xlsx). Loading a revised estimation updates prices and drawings but keeps your edits.">Load estimation<input type="file" id="fileInput" accept=".xlsx,.xlsm,.xls" hidden></label>
+      <label class="btn ghost" title="Load an Excel downloaded from here (the QUOTE WORKING SHEET), changed or not. The quote is rebuilt from it, ready for the PDF.">Load edited Excel<input type="file" id="xlLoadInput" accept=".xlsx" hidden></label>
+      <button class="btn" id="btnRefresh" title="Clear this quote and start a fresh one">Refresh</button>
       <button class="btn" id="addExtras" title="Add items that are not in the Logikal estimation">Add extras</button>
       <button class="btn" id="btnSettings">Pricing &amp; rules</button>
       <span class="div"></span>
@@ -780,7 +786,8 @@ let uid = 1;
 /* ---------- rows ---------- */
 function makeRow(est) { return { id: uid++, source: est ? 'est' : 'manual', ref: est ? est.ref : '', est, drawing: est ? est.drawing : null, ov: {}, missing: false, isNew: false, changes: [] }; }
 function autoFor(row, idx) {
-  const base = row.est ? deriveAuto(row.est, S) : { product: '', width: '', height: '', qty: 1, colour: '', config: '', trickle: 'N/A', cill: 'N/A', handle: 'N/A', glassSpec: '', additional: '', frameCost: 0, glassCost: 0, markup: S.defaultMarkup, drainCost: 0, tripleCost: 0, manDays: 0, location: '', paneKg: 0, panes: 1 };
+  // a line rebuilt from an edited Excel starts from what the Excel said, not from Logikal
+  const base = row.xl ? { ...row.xl } : row.est ? deriveAuto(row.est, S) : { product: '', width: '', height: '', qty: 1, colour: '', config: '', trickle: 'N/A', cill: 'N/A', handle: 'N/A', glassSpec: '', additional: '', frameCost: 0, glassCost: 0, markup: S.defaultMarkup, drainCost: 0, tripleCost: 0, manDays: 0, location: '', paneKg: 0, panes: 1 };
   base.frameNo = String(idx + 1); base.retailOverride = '';
   return base;
 }
@@ -799,7 +806,116 @@ async function loadEstimationFile(file) {
   try { parsed = await parseEstimation(buf, XLSX, JSZip); }
   catch (e) { banner('warn', 'Could not read “' + esc(file.name) + '”: ' + esc(e.message || e)); return; }
   if (!parsed.positions.length) { banner('warn', 'No “Position:” blocks found in “' + esc(file.name) + '”. Is this a Logikal estimation export?'); return; }
+  // a new upload is a new quote, so nothing from the last one (name, lines, discount) carries over.
+  // Only a revised estimation of the same project may be laid over the quote on screen, if asked.
+  if (state.rows.length) {
+    const same = state.est && parsed.project.name && state.est.project.name && sameName(parsed.project.name, state.est.project.name);
+    if (!same || confirm(`“${file.name}” is for the same project as the quote on screen.\n\nOK = start a fresh quote from it.\nCancel = treat it as a revised estimation and keep your edits.`)) resetJob();
+  }
+  const fresh = !state.rows.length;
   applyEstimation(parsed, file.name);
+  done(fresh ? 'New quote loaded' : 'Revised estimation loaded', `<b>${esc(state.project.projectName || 'Quote')}</b>: ${activeRows().length} lines from “${esc(file.name)}”.<br>The PDF and Excel will be named “${esc(outName())}”.`);
+}
+const sameName = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+const outName = () => safeName(state.project.projectName) + ' ' + (state.project.version || 'Quotation');
+
+/* Start again from nothing: client, project, lines and the job-only figures (quoted installation,
+   crane, discount) all go. Pricing, rules and the cover picture stay. */
+function resetJob() {
+  state.project = { client: '', projectName: '', address: '', tel: '', quoteRef: '', date: todayStr(), installDate: '', version: 'Quotation V1' };
+  state.est = null; state.rows = []; uid = 1;
+  S.installOverride = ''; S.craneCost = 0; S.discountPct = DEFAULT_SETTINGS.discountPct; saveSettings();
+  $('#banners').innerHTML = '';
+}
+/* a clear "it's done" box with an OK button */
+function done(title, html) {
+  $('#modalBox').innerHTML = `<div class="donebox"><div class="donetick">✓</div><h3>${esc(title)}</h3><p>${html}</p><button class="btn" id="doneOk">OK</button></div>`;
+  $('#modal').classList.add('on');
+  $('#doneOk').onclick = () => $('#modal').classList.remove('on');
+  $('#doneOk').focus();
+}
+$('#btnRefresh').onclick = () => {
+  if (state.rows.length && !confirm('Clear this quote and start a fresh one?\n\nAnything not saved (Save job / Excel / PDF) will be lost.')) return;
+  resetJob(); render();
+  done('Refreshed', 'The portal is clear and ready for the next quote.');
+};
+
+/* ---------- load an edited Excel: the QUOTE WORKING SHEET this portal downloads ----------
+   Rebuilds the whole quote from the sheet, as Load estimation does from Logikal: lines, prices,
+   markups, quantities, man days, drawings and the installation figures. Works for a file changed
+   in Excel or not, and for any job, with nothing loaded first. */
+async function loadEditedExcel(file) {
+  for (let i = 0; i < 40 && !window.ExcelJS; i++) await new Promise(r => setTimeout(r, 250));
+  if (!window.ExcelJS) { banner('warn', 'Excel library still loading — try again in a moment.'); return; }
+  try {
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    const ws = wb.getWorksheet('QUOTE WORKING SHEET');
+    const cv = c => { const x = c ? c.value : null; if (x && typeof x === 'object') { if ('formula' in x || 'sharedFormula' in x) return { f: true, v: typeof x.result === 'object' ? null : x.result }; if (x.richText) return { f: false, v: x.richText.map(t => t.text).join('') }; if ('text' in x) return { f: false, v: x.text }; if ('error' in x) return { f: false, v: null }; if (x instanceof Date) return { f: false, v: x.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) }; } return { f: false, v: x ?? null }; };
+    const str = c => String(cv(c).v ?? '').trim(), n = c => { const v = cv(c).v; return typeof v === 'number' ? v : num(v); };
+    if (!ws || !/FRAME NO/i.test(str(ws.getCell('A12')))) throw new Error('this is not an Excel downloaded from this portal (no QUOTE WORKING SHEET). For a Logikal estimation use “Load estimation”.');
+    if (state.rows.length && !confirm(`Replace the quote on screen with “${file.name}”?`)) return;
+
+    // the MARKUP column is a multiplier (2.3 = cost × 2.3); newer files show a % margin instead
+    const mHead = str(ws.getCell('V12')), mPct = /%/.test(mHead), ofPrice = /OF PRICE/i.test(mHead);
+    const toX = m => m == null ? null : !mPct ? m : ofPrice ? (m < 1 ? 1 / (1 - m) : null) : 1 + m;
+    // drawings sit in column U, one per line
+    const pics = {};
+    ws.getImages().forEach(im => {
+      const tl = im.range && im.range.tl, rowNo = tl ? Math.floor(tl.nativeRow ?? tl.row) + 1 : 0, col = tl ? Math.floor(tl.nativeCol ?? tl.col) : 0, m = wb.getImage(+im.imageId);
+      if (col !== 20 || !m || !m.buffer) return;
+      const b = new Uint8Array(m.buffer); let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+      pics[rowNo] = 'data:image/' + (m.extension === 'jpeg' ? 'jpeg' : m.extension || 'png') + ';base64,' + btoa(s);
+    });
+
+    resetJob();
+    const P = state.project, a3 = str(ws.getCell('A3')).split(/\s+·\s+Ref\s+/);
+    P.version = a3[0] || 'Quotation V1'; P.quoteRef = a3[1] || '';
+    P.client = str(ws.getCell('A4')); P.projectName = str(ws.getCell('A5')).replace(/^Project:\s*/i, ''); P.address = str(ws.getCell('A6'));
+    const a7 = str(ws.getCell('A7')), tel = a7.match(/TEL:\s*(.*?)\s{2,}/i), inst = a7.match(/INSTALLATION DATE:\s*(.*)$/i);
+    P.tel = tel ? tel[1] : ''; P.installDate = inst && !/^TBC$/i.test(inst[1].trim()) ? inst[1].trim() : '';
+    P.date = str(ws.getCell('U2')) || todayStr();
+
+    let rn = 13;
+    for (; rn <= ws.rowCount; rn++) {
+      const c = k => ws.getRow(rn).getCell(k);
+      if (/^TOTAL GLAZED FRAME COST/i.test(str(c(1)))) break;
+      const product = str(c(3)), refTxt = str(c(2));
+      if (!product && !refTxt) continue;
+      const parts = refTxt.split(' - '), ref = parts.length > 1 ? parts.pop() : refTxt, location = parts.length ? parts.join(' - ') : '';
+      const dim = k => { const s = str(c(k)); return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : s; };
+      const frameCost = n(c(11)) || 0, glassCost = n(c(12)) || 0, qty = n(c(23)) || 1;
+      const row = makeRow(null); row.source = 'est'; row.ref = ref; row.drawing = pics[rn] || null;
+      row.est = { ref, system: product, finish: str(c(6)), width: dim(4), height: dim(5), qty, glass: [], warnings: [], notes: [], drawing: row.drawing, sum: { material: frameCost, wages: 0, extra: 0, glass: glassCost, net: frameCost + glassCost } };
+      row.xl = { product, width: dim(4), height: dim(5), qty, colour: str(c(6)), config: str(c(7)), trickle: str(c(8)), cill: str(c(9)), handle: str(c(10)), glassSpec: str(c(19)), additional: str(c(20)), frameCost, glassCost, markup: toX(n(c(22))) ?? S.defaultMarkup, drainCost: n(c(15)) || 0, tripleCost: n(c(17)) || 0, manDays: n(c(24)) || 0, location, paneKg: 0, panes: 1 };
+      const price = cv(c(14)); if (!price.f && n(c(14)) != null) row.ov.retailOverride = n(c(14));
+      state.rows.push(row);
+    }
+    if (!state.rows.length) throw new Error('no lines were found under the headings on the QUOTE WORKING SHEET.');
+
+    // totals and installation, found by their labels
+    const lab = {}, ylab = {};
+    for (let r = rn; r <= ws.rowCount; r++) { const a = str(ws.getCell('A' + r)), y = str(ws.getCell('Y' + r)); if (a && !lab[a.split(' (')[0].toUpperCase()]) lab[a.split(' (')[0].toUpperCase()] = r; if (y) ylab[y.toUpperCase()] = r; }
+    const discRow = Object.entries(lab).find(([k]) => /DISCOUNT/.test(k) && !/AFTER/.test(k));
+    if (discRow) { const d = ws.getCell('N' + discRow[1]).formula || '', m = d.match(/\*\s*(\d+(?:\.\d+)?)\s*$/), l = str(ws.getCell('A' + discRow[1])).match(/\((\d+(?:\.\d+)?)%\)/); S.discountPct = m ? Math.round(Number(m[1]) * 1e6) / 1e4 : l ? Number(l[1]) : S.discountPct; }
+    if (lab['CRANE / POWERED LIFTING EQUIPMENT']) S.craneCost = n(ws.getCell('N' + lab['CRANE / POWERED LIFTING EQUIPMENT'])) || 0;
+    [['COST / MAN DAY', 'dayRate'], ['SURVEY COST', 'surveyCost'], ['PETROL COST', 'petrolCost'], ['ACCOMMODATION / SUBSISTENCE COST', 'accomCost']].forEach(([l, k]) => { if (ylab[l]) { const v = n(ws.getCell('X' + ylab[l])); if (v != null) S[k] = v; } });
+    if (lab['INSTALLATION COST']) { const c = ws.getCell('N' + lab['INSTALLATION COST']); S.installOverride = cv(c).f ? '' : (n(c) ?? ''); }
+    // a figure typed over the project total is reached through the discount
+    const totRow = lab['TOTAL PROJECT COST'], tc = totRow && ws.getCell('N' + totRow);
+    if (tc && !cv(tc).f && n(tc) != null) {
+      const T = projectTotals(computeAll().filter(l => !l.row.missing), S), pct = T.framesInc ? (1 - (n(tc) - T.crane - T.install) / T.framesInc) * 100 : NaN;
+      if (isFinite(pct) && pct >= 0 && pct < 100) S.discountPct = Math.round(pct * 1e4) / 1e4;
+    }
+    saveSettings(); render();
+    const T = projectTotals(computeAll().filter(l => !l.row.missing), S);
+    done('Edited Excel loaded', `<b>${esc(P.projectName || 'Quote')}</b>: ${state.rows.length} lines from “${esc(file.name)}”, total <b>${gbp(T.total)}</b> + VAT.<br>Ready for the PDF. The PDF and Excel will be named “${esc(outName())}”.`);
+  } catch (e) { banner('warn', 'Could not read “' + esc(file.name) + '”: ' + esc(e.message || e)); }
+}
+/* a dropped .xlsx: our own Excel has a QUOTE WORKING SHEET, anything else is a Logikal estimation */
+async function openSpreadsheet(file) {
+  let ours = false;
+  try { const z = await JSZip.loadAsync(await file.arrayBuffer()), w = z.file('xl/workbook.xml'); ours = !!w && /name="QUOTE WORKING SHEET"/.test(await w.async('string')); } catch (e) { }
+  return ours ? loadEditedExcel(file) : loadEstimationFile(file);
 }
 function applyEstimation(parsed, fileName) {
   const first = !state.rows.some(r => r.source === 'est');
@@ -818,7 +934,7 @@ function applyEstimation(parsed, fileName) {
       cmp('Material', before.sum.material, p.sum.material, 1); cmp('Wages', before.sum.wages, p.sum.wages, 1); cmp('Glass', before.sum.glass, p.sum.glass, 1);
       if (before.system !== p.system) ch.push('System changed');
       if (before.finish !== p.finish) ch.push('Finish changed');
-      exs.forEach(ex => { ex.est = p; if (!ex.customDrawing) ex.drawing = p.drawing || ex.drawing; ex.missing = false; ex.isNew = false; ex.changes = ch; });
+      exs.forEach(ex => { ex.est = p; delete ex.xl; if (!ex.customDrawing) ex.drawing = p.drawing || ex.drawing; ex.missing = false; ex.isNew = false; ex.changes = ch; });
       if (ch.length) nChg++;
       byRef.delete(k);
     } else { const r = makeRow(p); r.isNew = !first; fresh.push(r); nNew++; }
@@ -1142,7 +1258,8 @@ $('#fileInput').addEventListener('change', e => { const f = e.target.files[0]; i
 const drop = $('#drop');
 ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('hover'); }));
 ['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || e.target === document.documentElement) drop.classList.remove('hover'); }));
-document.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (!f) return; if (/\.json$/i.test(f.name)) openJob(f); else loadEstimationFile(f); });
+document.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (!f) return; if (/\.json$/i.test(f.name)) openJob(f); else openSpreadsheet(f); });
+$('#xlLoadInput').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadEditedExcel(f); e.target.value = ''; });
 $('#addExtras').onclick = () => openExtras();
 $('#btnSettings').onclick = () => { renderSettings(); $('#drawer').classList.add('open'); $('#scrim').classList.add('on'); };
 const closeDrawer = () => { $('#drawer').classList.remove('open'); $('#scrim').classList.remove('on'); render(); };
