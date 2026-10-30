@@ -1833,6 +1833,99 @@ function importWorkbook(wb, fileName, { fromViewer = false } = {}) {
   return { changes, added, removed: removed.length };
 }
 
+/* ---------- an Excel from before the round trip (downloaded before 29 Oct 2026) ----------
+   It has no RENKA DATA sheet and no line ids, and its MARKUP column is the price multiplier
+   (2.3 = cost × 2.3). It cannot rebuild a quote on its own, so it is laid over the quote on
+   screen: each line is matched by its location / ref, and whatever differs becomes an override. */
+function importOldWorkbook(wb) {
+  const ws = wb.getWorksheet(XL_SHEET);
+  if (!ws || !/FRAME NO/i.test(xlStr(xlCell(ws.getCell('A' + XL_HEAD)).v))) throw new Error('This Excel was not downloaded from this portal, so it cannot be matched to a quote. Download the Excel from here, make the changes in that file, and upload it.');
+  if (!activeRows().length) throw new Error('This Excel comes from the older version of the portal (before 29 October), so it does not carry the quote inside it. Open the quote first (load the Logikal estimation, or the saved job .json), then upload this Excel again and its changes will be put onto that quote.');
+  const changes = [], lines = computeAll().filter(l => !l.row.missing), used = new Set(), ordered = [];
+  const near = (a, b, tol = 0.004) => Math.abs((Number(a) || 0) - (Number(b) || 0)) <= tol;
+  const isNum = s => /^\s*-?\d+(\.\d+)?\s*$/.test(String(s ?? ''));
+  const heads = {}; ws.getRow(XL_HEAD).eachCell((c, i) => heads[i] = xlStr(xlCell(c).v));
+  const markCol = heads[XL_COL.margin] || '', markIsX = !/%/.test(markCol);
+  let added = 0, rn = XL_HEAD + 1;
+  for (; rn <= ws.rowCount; rn++) {
+    const at = c => xlCell(ws.getRow(rn).getCell(c)), a1 = xlStr(at(1).v);
+    if (/^TOTAL GLAZED FRAME COST/i.test(a1)) break;
+    const ref = xlStr(at(XL_COL.ref).v), product = xlStr(at(XL_COL.product).v);
+    if (!ref && !product) continue;
+    const L = lines.find(l => !used.has(l.row.id) && (refText(l.v, l.row) === ref || (l.row.ref && l.row.ref === ref)));
+    const read = {};
+    XL_TEXT.forEach(k => { const v = at(XL_COL[k]).v; read[k] = (k === 'width' || k === 'height') && isNum(v) ? Number(v) : xlStr(v); });
+    ['frameCost', 'glassCost', 'qty', 'manDays', 'drainCost', 'tripleCost'].forEach(k => read[k] = xlNum(at(XL_COL[k]).v));
+    const m = xlNum(at(XL_COL.margin).v);
+    read.markup = m == null ? null : markIsX ? m : pctToX(m * 100, S.marginMode);
+    const p = at(XL_COL.retail); read.retail = !p.f ? xlNum(p.v) : null;
+    if (L) {
+      used.add(L.row.id); ordered.push(L.row);
+      const v = L.v, ov = L.row.ov, label = `Frame ${a1 || v.frameNo}`;
+      XL_TEXT.forEach(k => { if (xlStr(read[k]) !== xlStr(v[k])) { ov[k] = read[k]; changes.push(`${label}: ${k === 'glassSpec' ? 'glass' : k} → “${xlStr(read[k]).slice(0, 40)}”`); } });
+      [['frameCost', 'frame cost'], ['glassCost', 'glass cost'], ['qty', 'qty'], ['manDays', 'man days'], ['drainCost', 'drain cost'], ['tripleCost', 'triple glazing cost']].forEach(([k, l]) => {
+        if (read[k] == null || near(read[k], v[k])) return;
+        changes.push(`${label}: ${l} ${k === 'qty' || k === 'manDays' ? (Number(v[k]) || 0) + ' → ' + read[k] : gbp(v[k]) + ' → ' + gbp(read[k])}`); ov[k] = read[k];
+      });
+      if (read.markup != null && isFinite(read.markup) && !near(read.markup, v.markup, 0.0005)) {
+        changes.push(`${label}: margin ${pctOf(v.markup)}% → ${pctOf(read.markup)}%`); ov.markup = read.markup;
+      }
+      if (read.retail != null && !near(read.retail, L.retail)) { changes.push(`${label}: price typed ${gbp(L.retail)} → ${gbp(read.retail)}`); ov.retailOverride = read.retail; }
+    } else {
+      if (!product || (read.frameCost == null && read.retail == null)) continue;
+      const r = makeRow(null); r.extra = product;
+      const ov = { product, location: ref, frameCost: read.frameCost || 0, glassCost: read.glassCost || 0, qty: read.qty || 1, manDays: read.manDays || 0 };
+      ['width', 'height', 'colour', 'config', 'trickle', 'cill', 'handle', 'glassSpec', 'additional'].forEach(k => { if (xlStr(read[k])) ov[k] = read[k]; });
+      if (read.markup != null && isFinite(read.markup)) ov.markup = read.markup;
+      if (read.retail != null) ov.retailOverride = read.retail;
+      r.ov = ov; ordered.push(r); added++;
+      changes.push(`New line from Excel: ${product}${ref ? ' at ' + ref : ''}`);
+    }
+  }
+  const removed = lines.filter(l => !used.has(l.row.id) && l.row.source === 'est').map(l => l.row);
+  removed.forEach(r => changes.push(`Line ${r.ref || r.id} is not in the Excel, so it was taken off the quote`));
+  const keep = lines.filter(l => !used.has(l.row.id) && l.row.source !== 'est').map(l => l.row);   // extras added here since
+
+  // totals block, found by its labels in column A and Y
+  const rowOf = {}, yRows = {};
+  for (let r2 = rn; r2 <= ws.rowCount; r2++) {
+    const a = xlStr(xlCell(ws.getCell('A' + r2)).v), y = xlStr(xlCell(ws.getCell('Y' + r2)).v);
+    if (/^TOTAL GLAZED FRAME COST$/i.test(a)) rowOf.tot = r2; else if (/DISCOUNT/i.test(a) && !rowOf.disc) rowOf.disc = r2;
+    else if (/^CRANE/i.test(a)) rowOf.crane = r2; else if (/^INSTALLATION COST/i.test(a)) rowOf.inst = r2; else if (/^TOTAL PROJECT COST/i.test(a)) rowOf.total = r2;
+    if (y) yRows[y] = r2;
+  }
+  const N = k => rowOf[k] ? xlCell(ws.getCell('N' + rowOf[k])) : { f: true, v: null };
+  const set = {};
+  if (rowOf.disc) {
+    const lab = xlStr(xlCell(ws.getCell('A' + rowOf.disc)).v).match(/\((\d+(?:\.\d+)?)%\)/), fx = ws.getCell('N' + rowOf.disc).formula || '', fm = fx.match(/\*\s*(\d+(?:\.\d+)?)\s*$/);
+    const pct = fm ? round2(Number(fm[1]) * 10000) / 100 : lab ? Number(lab[1]) : null;
+    if (pct != null && !near(pct, S.discountPct, 1e-6)) { set.discountPct = pct; changes.push(`Discount ${Number(S.discountPct) || 0}% → ${pct}%`); }
+  }
+  const crane = N('crane'); if (!crane.f && xlNum(crane.v) != null && !near(crane.v, S.craneCost)) { set.craneCost = xlNum(crane.v); changes.push(`Crane ${gbp(S.craneCost)} → ${gbp(set.craneCost)}`); }
+  [['COST / MAN DAY', 'dayRate', 'Cost per man day'], ['SURVEY COST', 'surveyCost', 'Survey'], ['PETROL COST', 'petrolCost', 'Petrol'], ['ACCOMMODATION / SUBSISTENCE COST', 'accomCost', 'Accommodation']].forEach(([lab, k, l]) => {
+    if (!yRows[lab]) return; const v = xlNum(xlCell(ws.getCell('X' + yRows[lab])).v);
+    if (v != null && !near(v, S[k])) { set[k] = v; changes.push(`${l} ${gbp(S[k])} → ${gbp(v)}`); }
+  });
+  const inst = N('inst');
+  if (!inst.f && xlNum(inst.v) != null) { set.installOverride = xlNum(inst.v); changes.push(`Installation quoted at ${gbp(set.installOverride)}`); }
+  else if (inst.f && S.installOverride !== '' && S.installOverride != null) { set.installOverride = ''; changes.push('Installation back to the calculated figure'); }
+
+  state.rows = [...ordered, ...keep, ...state.rows.filter(r => r.missing)];
+  Object.assign(S, set);
+  const tot = N('total'), tv = xlNum(tot.v);
+  if (!tot.f && tv != null) {
+    const T = projectTotals(computeAll().filter(l => !l.row.missing), S);
+    const pct = T.framesInc ? (1 - (tv - T.crane - T.install) / T.framesInc) * 100 : NaN;
+    if (!near(tv, T.total)) {
+      if (isFinite(pct) && pct >= 0 && pct < 100) { S.discountPct = Math.round(pct * 1e6) / 1e6; changes.push(`Total project cost set to ${gbp(tv)}: discount is now ${S.discountPct.toFixed(2)}%`); }
+      else changes.push(`⚠ Total ${gbp(tv)} was not used: it would need a ${isFinite(pct) ? (pct < 0 ? 'negative discount (the total is above the full price)' : 'discount of 100% or more') : 'discount on nothing'}. Raise the margins instead.`);
+    }
+  }
+  changes.unshift('Older Excel (from before 29 October): its lines were matched to the quote on screen by location / ref');
+  saveSettings();
+  return { changes, added, removed: removed.length };
+}
+
 async function uploadEditedExcel(file) {
   if (!window.ExcelJS) { banner('warn', 'Excel library still loading — try again in a moment.'); return; }
   let res;
@@ -1840,9 +1933,15 @@ async function uploadEditedExcel(file) {
     const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
     if (!wb.getWorksheet(XL_DATA)) {
       if (wb.worksheets.length === 1) { banner('info', 'That looks like a Logikal estimation rather than an edited quote, so it was loaded as one.'); return loadEstimationFile(file); }
+      if (wb.getWorksheet(XL_SHEET)) {
+        if (activeRows().length && !confirm(`“${file.name}” is from the older version of the portal, so it will be matched to the quote on screen (by location / ref) and its changes put onto it.\n\nGo ahead?`)) return;
+        res = importOldWorkbook(wb);
+      }
     }
-    if (state.rows.length && !confirm(`Replace the quote on screen with “${file.name}”?\n\nThe quote will match the Excel, including every change made in it.`)) return;
-    res = importWorkbook(wb, file.name);
+    if (!res) {
+      if (state.rows.length && !confirm(`Replace the quote on screen with “${file.name}”?\n\nThe quote will match the Excel, including every change made in it.`)) return;
+      res = importWorkbook(wb, file.name);
+    }
   } catch (e) { banner('warn', 'Could not read “' + esc(file.name) + '”: ' + esc(e.message || e)); return; }
   noteUpload(file.name, 'Edited Excel');
   render();
@@ -1851,9 +1950,9 @@ async function uploadEditedExcel(file) {
     ? `${c.length} change${c.length === 1 ? '' : 's'} from Excel applied:<br>` + c.slice(0, 12).map(esc).join('<br>') + (c.length > 12 ? `<br>… and ${c.length - 12} more` : '')
     : 'Nothing was changed in it, so the quote is as it was downloaded.'));
 }
-/* which kind of .xlsx is this? an edited quote carries the RENKA DATA sheet */
+/* which kind of .xlsx is this? an edited quote carries the RENKA DATA sheet (older ones only the working sheet) */
 async function isEditedQuote(file) {
-  try { const z = await JSZip.loadAsync(await file.arrayBuffer()); const w = z.file('xl/workbook.xml'); return !!w && /name="RENKA DATA"/.test(await w.async('string')); }
+  try { const z = await JSZip.loadAsync(await file.arrayBuffer()); const w = z.file('xl/workbook.xml'); return !!w && /name="(RENKA DATA|QUOTE WORKING SHEET)"/.test(await w.async('string')); }
   catch (e) { return false; }
 }
 async function openSpreadsheet(file) { if (await isEditedQuote(file)) uploadEditedExcel(file); else loadEstimationFile(file); }
