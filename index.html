@@ -261,7 +261,7 @@ table.ws .src b{color:var(--ink);font-weight:700}
 .xv td img{max-width:100%;max-height:120px;display:block;margin:0 auto}
 .xv-empty{background:#fff;border:1px solid var(--line);padding:40px 20px;text-align:center}
 .xv-empty p{color:var(--ink2);margin:0 0 14px}
-/* the Quotation and Excel sheet viewer tabs show one Download button; the working sheet shows the rest */
+/* the Quotation and Excel sheet viewer and editor tabs show one Download button; the working sheet shows the rest */
 body[data-view="quote"] .actions,body[data-view="xl"] .actions{display:none}
 .xv td.xe{cursor:text;box-shadow:inset 0 0 0 1px rgba(30,90,200,.18)}
 .xv td.xe:hover{box-shadow:inset 0 0 0 2px #1e5ac8}
@@ -378,7 +378,7 @@ body[data-view="quote"] .actions,body[data-view="xl"] .actions{display:none}
     <div class="tabs" id="tabs">
       <button data-v="work" class="on">Working sheet</button>
       <button data-v="quote">Quotation</button>
-      <button data-v="xl">Excel sheet viewer</button>
+      <button data-v="xl">Excel sheet viewer and editor</button>
     </div>
     <span class="sp"></span>
     <div class="actions">
@@ -897,7 +897,7 @@ async function loadEditedExcel(file) {
     render(); XV.sig = quoteSig(); syncDl();
     $('#tabs').querySelector('[data-v="xl"]').click();   // straight to the file itself
     const T = projectTotals(computeAll().filter(l => !l.row.missing), S);
-    done('Edited Excel loaded', `<b>${esc(state.project.projectName || 'Quote')}</b>: ${state.rows.length} lines from “${esc(file.name)}”, total <b>${gbp(T.total)}</b> + VAT.<br>Here it is in the Excel sheet viewer. Click a cell on the QUOTE WORKING SHEET to change it; the quote and PDF follow.`);
+    done('Edited Excel loaded', `<b>${esc(state.project.projectName || 'Quote')}</b>: ${state.rows.length} lines from “${esc(file.name)}”, total <b>${gbp(T.total)}</b> + VAT.<br>Here it is in the Excel sheet viewer and editor. Click a cell on the QUOTE WORKING SHEET to change it; the quote and PDF follow.`);
   } catch (e) { banner('warn', 'Could not read “' + esc(file.name) + '”: ' + esc(e.message || e)); }
 }
 /* the quote rebuilt from a workbook's QUOTE WORKING SHEET: an uploaded file, or one edited in the viewer */
@@ -964,7 +964,7 @@ function quoteFromWorkbook(wb) {
     saveSettings();
   }
 }
-/* ---------- Excel sheet viewer: the uploaded Excel itself, read only, sheet by sheet ---------- */
+/* ---------- Excel sheet viewer and editor: the quote's Excel, sheet by sheet, editable ---------- */
 const XV = { wb: null, name: '', at: '', sheet: '', sig: '', src: '' };
 /* what the quote is now: when it no longer matches the Excel in the viewer, the Excel is made again */
 const quoteSig = () => JSON.stringify([state.project, state.rows.map(r => [r.id, r.ov, r.missing, r.xl, r.est && r.est.ref]), ['discountPct', 'craneCost', 'installOverride', 'dayRate', 'surveyCost', 'petrolCost', 'accomCost', 'defaultMarkup', 'extrasMarkup'].map(k => S[k])]);
@@ -1173,7 +1173,7 @@ async function showQuote() {
     const ws = XV.wb.getWorksheet('QUOTATION'), old = $('#qExcel .xv-wrap'), keep = old ? [old.scrollTop, old.scrollLeft] : null;
     $('#qExcel').innerHTML = `<div class="xv-wrap">${sheetTable(XV.wb, ws)}</div>`;
     if (keep) { const w = $('#qExcel .xv-wrap'); w.scrollTop = keep[0]; w.scrollLeft = keep[1]; }
-    note(`The QUOTATION sheet of <b>${esc(XV.name)}</b>${XV.file && !XV.edited ? ', exactly as uploaded' : ''}. To change it, use the <b>Excel sheet viewer</b> tab.`);
+    note(`The QUOTATION sheet of <b>${esc(XV.name)}</b>${XV.file && !XV.edited ? ', exactly as uploaded' : ''}. To change it, use the <b>Excel sheet viewer and editor</b> tab.`);
     return;
   }
   note('Building the PDF…');
@@ -1188,7 +1188,7 @@ async function showQuote() {
 }
 $('#qMode').onchange = e => { qMode = e.target.value; try { localStorage.setItem('qb.qmode', qMode); } catch (err) { } syncDl(); showQuote(); };
 
-/* the one Download button on the Quotation and Excel sheet viewer tabs: it gives what is on screen */
+/* the one Download button on the Quotation and Excel sheet viewer and editor tabs: it gives what is on screen */
 const dlKind = () => state.view === 'xl' || qMode === 'excel' ? 'excel' : qMode === 'pdf' ? 'pdf' : 'sheet';
 function syncDl() {
   const k = dlKind(), b = $('#qDl');
