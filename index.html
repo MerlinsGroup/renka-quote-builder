@@ -246,6 +246,24 @@ table.ws .src b{color:var(--ink);font-weight:700}
 .modal .box{background:#fff;border-radius:3px;padding:22px 24px;max-width:min(1000px,95vw);max-height:92vh;overflow:auto;box-shadow:0 30px 60px -20px rgba(20,22,24,.45)}
 .modal img{max-width:100%;max-height:72vh;display:block;margin:0 auto}
 .donebox{text-align:center;max-width:440px;padding:6px 10px}
+.donebox .q{width:46px;height:46px;border-radius:50%;background:var(--ink);color:#fff;font-size:24px;line-height:46px;margin:0 auto}
+.donebox .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.xv-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:4px 0 10px}
+.xv-bar .f{flex:1;min-width:200px;color:var(--ink2);font-size:13px}
+.xv-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.xv-tabs button{border:1px solid var(--line);background:#fff;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.xv-tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.xv-wrap{overflow:auto;max-height:78vh;background:#fff;border:1px solid var(--line)}
+.xv{border-collapse:collapse;font:11px/1.3 Arial,sans-serif;color:#111;table-layout:fixed}
+.xv th{position:sticky;top:0;background:#f3f3f3;color:#666;font-weight:normal;border:1px solid #d9d9d9;padding:2px 4px;z-index:1}
+.xv th.rn,.xv td.rn{position:sticky;left:0;background:#f3f3f3;color:#666;text-align:center;border:1px solid #d9d9d9;z-index:2}
+.xv td{border:1px solid #e6e6e6;padding:2px 4px;vertical-align:middle;white-space:pre-wrap;overflow:hidden;word-wrap:break-word}
+.xv td img{max-width:100%;max-height:120px;display:block;margin:0 auto}
+.xv-empty{background:#fff;border:1px solid var(--line);padding:40px 20px;text-align:center}
+.xv-empty p{color:var(--ink2);margin:0 0 14px}
+.qmode{display:inline-flex;gap:8px;align-items:center;font-weight:bold;margin-right:12px}
+.qmode select{font:inherit;font-weight:normal;padding:6px 8px;border:1px solid var(--ink);background:#fff}
+#qExcel,#qPdf{margin-bottom:16px}
 .donebox h3{margin:8px 0 6px;font-size:18px}
 .donebox p{margin:0 0 16px;line-height:1.5}
 .donetick{width:46px;height:46px;border-radius:50%;background:#2e7d32;color:#fff;font-size:26px;line-height:46px;margin:0 auto}
@@ -351,8 +369,8 @@ table.ws .src b{color:var(--ink);font-weight:700}
   <div class="toolbar__in">
     <div class="tabs" id="tabs">
       <button data-v="work" class="on">Working sheet</button>
-      <button data-v="quote">Customer quotation</button>
-      <button data-v="order">Order confirmation</button>
+      <button data-v="quote">Quotation</button>
+      <button data-v="xl">Excel sheet viewer</button>
     </div>
     <span class="sp"></span>
     <div class="actions">
@@ -424,8 +442,12 @@ table.ws .src b{color:var(--ink);font-weight:700}
     </div>
   </section>
 
-  <section class="view" id="view-quote"><div class="prevbar no-print"><span>This screen shows the <b>Spreadsheet</b> layout. The <b>Proposal</b> PDF (cover picture, summary, frame cards) is built when you download.</span><button class="btn sm ghost" data-preview="quote">Preview Proposal PDF</button></div><div class="doc-wrap"><div class="doc" id="docQuote"></div></div></section>
+  <section class="view" id="view-quote"><div class="prevbar no-print"><label class="qmode">View <select id="qMode"><option value="excel">Excel version</option><option value="pdf">PDF version</option><option value="sheet">Spreadsheet version</option></select></label><span id="qNote"></span></div>
+    <div id="qExcel" class="no-print" hidden></div>
+    <div id="qPdf" class="no-print" hidden></div>
+    <div class="doc-wrap" id="qSheet"><div class="doc" id="docQuote"></div></div></section>
   <section class="view" id="view-order"><div class="prevbar no-print"><span>This screen shows the <b>Spreadsheet</b> layout. The <b>Proposal</b> PDF (cover picture, summary, frame cards) is built when you download.</span><button class="btn sm ghost" data-preview="order">Preview Proposal PDF</button></div><div class="doc-wrap"><div class="doc" id="docOrder"></div></div></section>
+  <section class="view no-print" id="view-xl"><div id="xlView"></div></section>
   <div class="pagefoot no-print"><span>Renka Ltd</span><span>Engineered for living, designed for life</span></div>
 </main>
 </div><!-- #app -->
@@ -810,7 +832,7 @@ async function loadEstimationFile(file) {
   // Only a revised estimation of the same project may be laid over the quote on screen, if asked.
   if (state.rows.length) {
     const same = state.est && parsed.project.name && state.est.project.name && sameName(parsed.project.name, state.est.project.name);
-    if (!same || confirm(`“${file.name}” is for the same project as the quote on screen.\n\nOK = start a fresh quote from it.\nCancel = treat it as a revised estimation and keep your edits.`)) resetJob();
+    if (!same || await ask('Same project', `“${esc(file.name)}” is for the same project as the quote on screen.<br>Start a fresh quote, or treat it as a revised estimation and keep your edits?`, 'Start fresh quote', 'Keep my edits')) resetJob();
   }
   const fresh = !state.rows.length;
   applyEstimation(parsed, file.name);
@@ -825,7 +847,16 @@ function resetJob() {
   state.project = { client: '', projectName: '', address: '', tel: '', quoteRef: '', date: todayStr(), installDate: '', version: 'Quotation V1' };
   state.est = null; state.rows = []; uid = 1;
   S.installOverride = ''; S.craneCost = 0; S.discountPct = DEFAULT_SETTINGS.discountPct; saveSettings();
-  $('#banners').innerHTML = '';
+  $('#banners').innerHTML = ''; XV.wb = null;
+}
+/* a yes / no question asked in the page, not by the browser. Resolves true for yes. */
+function ask(title, html, yes = 'Yes', no = 'Cancel') {
+  return new Promise(res => {
+    $('#modalBox').innerHTML = `<div class="donebox"><div class="q">?</div><h3>${esc(title)}</h3><p>${html}</p><div class="btns"><button class="btn primary" id="askYes">${esc(yes)}</button><button class="btn" id="askNo">${esc(no)}</button></div></div>`;
+    $('#modal').classList.add('on'); $('#askYes').focus();
+    const end = v => { $('#modal').classList.remove('on'); res(v); };
+    $('#askYes').onclick = () => end(true); $('#askNo').onclick = () => end(false);
+  });
 }
 /* a clear "it's done" box with an OK button */
 function done(title, html) {
@@ -834,9 +865,9 @@ function done(title, html) {
   $('#doneOk').onclick = () => $('#modal').classList.remove('on');
   $('#doneOk').focus();
 }
-$('#btnRefresh').onclick = () => {
-  if (state.rows.length && !confirm('Clear this quote and start a fresh one?\n\nAnything not saved (Save job / Excel / PDF) will be lost.')) return;
-  resetJob(); render();
+$('#btnRefresh').onclick = async () => {
+  if (state.rows.length && !await ask('Refresh the portal?', 'This clears the quote on screen and starts a fresh one.<br>Anything not saved (Save job / Excel / PDF) will be lost.', 'Yes, refresh')) return;
+  resetJob(); render(); renderXlViewer();
   done('Refreshed', 'The portal is clear and ready for the next quote.');
 };
 
@@ -853,7 +884,7 @@ async function loadEditedExcel(file) {
     const cv = c => { const x = c ? c.value : null; if (x && typeof x === 'object') { if ('formula' in x || 'sharedFormula' in x) return { f: true, v: typeof x.result === 'object' ? null : x.result }; if (x.richText) return { f: false, v: x.richText.map(t => t.text).join('') }; if ('text' in x) return { f: false, v: x.text }; if ('error' in x) return { f: false, v: null }; if (x instanceof Date) return { f: false, v: x.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) }; } return { f: false, v: x ?? null }; };
     const str = c => String(cv(c).v ?? '').trim(), n = c => { const v = cv(c).v; return typeof v === 'number' ? v : num(v); };
     if (!ws || !/FRAME NO/i.test(str(ws.getCell('A12')))) throw new Error('this is not an Excel downloaded from this portal (no QUOTE WORKING SHEET). For a Logikal estimation use “Load estimation”.');
-    if (state.rows.length && !confirm(`Replace the quote on screen with “${file.name}”?`)) return;
+    if (state.rows.length && !await ask('Load this Excel?', `The quote on screen will be replaced with “${esc(file.name)}”.`, 'Yes, load it')) return;
 
     // the MARKUP column is a multiplier (2.3 = cost × 2.3); newer files show a % margin instead
     const mHead = str(ws.getCell('V12')), mPct = /%/.test(mHead), ofPrice = /OF PRICE/i.test(mHead);
@@ -907,10 +938,112 @@ async function loadEditedExcel(file) {
       if (isFinite(pct) && pct >= 0 && pct < 100) S.discountPct = Math.round(pct * 1e4) / 1e4;
     }
     saveSettings(); render();
+    Object.assign(XV, { wb, name: file.name, at: new Date().toLocaleString('en-GB'), sheet: 'QUOTE WORKING SHEET' }); renderXlViewer();
     const T = projectTotals(computeAll().filter(l => !l.row.missing), S);
-    done('Edited Excel loaded', `<b>${esc(P.projectName || 'Quote')}</b>: ${state.rows.length} lines from “${esc(file.name)}”, total <b>${gbp(T.total)}</b> + VAT.<br>Ready for the PDF. The PDF and Excel will be named “${esc(outName())}”.`);
+    done('Edited Excel loaded', `<b>${esc(P.projectName || 'Quote')}</b>: ${state.rows.length} lines from “${esc(file.name)}”, total <b>${gbp(T.total)}</b> + VAT.<br>Ready for the PDF. The PDF and Excel will be named “${esc(outName())}”.<br>See the file itself in the <b>Excel sheet viewer</b> tab.`);
   } catch (e) { banner('warn', 'Could not read “' + esc(file.name) + '”: ' + esc(e.message || e)); }
 }
+/* ---------- Excel sheet viewer: the uploaded Excel itself, read only, sheet by sheet ---------- */
+const XV = { wb: null, name: '', at: '', sheet: '' };
+function renderXlViewer() {
+  const box = $('#xlView'); if (!box) return;
+  if (!XV.wb) {
+    box.innerHTML = `<div class="xv-empty"><h3>No edited Excel loaded</h3><p>Use <b>Load edited Excel</b> to upload the Excel you changed. It shows here exactly as it is in the file, and the quote and PDF are made from its numbers.</p><label class="btn primary">Load edited Excel<input type="file" accept=".xlsx" hidden onchange="if(this.files[0])loadEditedExcel(this.files[0]);this.value=''"></label></div>`;
+    return;
+  }
+  const sheets = XV.wb.worksheets.filter(w => w.state !== 'hidden' && w.state !== 'veryHidden');
+  const ws = sheets.find(w => w.name === XV.sheet) || sheets[0];
+  box.innerHTML = `<div class="xv-bar"><div class="f"><b>${esc(XV.name)}</b> · uploaded ${esc(XV.at)} · read only: this is the file as uploaded, and the quote and PDF use its numbers.</div>
+    <div class="xv-tabs">${sheets.map(w => `<button data-xvs="${esc(w.name)}" class="${w === ws ? 'on' : ''}">${esc(w.name)}</button>`).join('')}</div></div>
+    <div class="xv-wrap">${sheetTable(XV.wb, ws)}</div>`;
+}
+/* one worksheet drawn as an Excel-like grid: values as shown, merges, fills, fonts, pictures */
+function sheetTable(wb, ws) {
+  const val = cell => {
+    let x = cell.value;
+    if (x && typeof x === 'object') {
+      if ('formula' in x || 'sharedFormula' in x) x = x.result;
+      else if (x.richText) x = x.richText.map(t => t.text).join('');
+      else if ('text' in x) x = x.text;
+      else if ('error' in x) x = x.error;
+    }
+    if (x == null || typeof x === 'object' && !(x instanceof Date)) return '';
+    if (x instanceof Date) return x.toLocaleDateString('en-GB');
+    if (typeof x === 'number') { const f = cell.numFmt || ''; return f.includes('%') ? (x * 100).toFixed(1) + '%' : f.includes('£') ? gbp(x) : String(Math.round(x * 100) / 100); }
+    return String(x);
+  };
+  // merged cells, pictures and hidden columns
+  const span = {}, skip = new Set();
+  (ws.model.merges || []).forEach(m => {
+    const [a, b] = m.split(':'), A = ws.getCell(a), B = ws.getCell(b);
+    span[A.row + ':' + A.col] = { rs: B.row - A.row + 1, cs: B.col - A.col + 1 };
+    for (let r = A.row; r <= B.row; r++) for (let c = A.col; c <= B.col; c++) if (r !== A.row || c !== A.col) skip.add(r + ':' + c);
+  });
+  const pics = {};
+  ws.getImages().forEach(im => {
+    const tl = im.range && im.range.tl, m = wb.getImage(+im.imageId); if (!tl || !m || !(m.buffer || m.base64)) return;
+    const type = 'data:image/' + (m.extension === 'jpeg' ? 'jpeg' : m.extension || 'png') + ';base64,';
+    let src;
+    if (m.base64) src = m.base64.startsWith('data:') ? m.base64 : type + m.base64;
+    else { const b = new Uint8Array(m.buffer); let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); src = type + btoa(s); }
+    const k = (Math.floor(tl.nativeRow ?? tl.row) + 1) + ':' + (Math.floor(tl.nativeCol ?? tl.col) + 1);
+    (pics[k] = pics[k] || []).push(src);
+  });
+  const nCol = Math.max(ws.columnCount, ...Object.keys(pics).map(k => +k.split(':')[1])), nRow = Math.max(ws.rowCount, ...Object.keys(pics).map(k => +k.split(':')[0]));
+  const cols = []; for (let c = 1; c <= nCol; c++) if (!ws.getColumn(c).hidden) cols.push(c);
+  const px = c => Math.round((ws.getColumn(c).width || 9) * 7.5);
+  let h = `<table class="xv"><colgroup><col style="width:38px">${cols.map(c => `<col style="width:${px(c)}px">`).join('')}</colgroup><thead><tr><th class="rn"></th>${cols.map(c => `<th>${ws.getColumn(c).letter}</th>`).join('')}</tr></thead><tbody>`;
+  for (let r = 1; r <= nRow; r++) {
+    const row = ws.getRow(r); if (row.hidden) continue;
+    h += `<tr style="height:${Math.round((row.height || 15) * 1.33)}px"><td class="rn">${r}</td>`;
+    for (const c of cols) {
+      const k = r + ':' + c; if (skip.has(k)) continue;
+      const cell = row.getCell(c), sp = span[k], st = [];
+      const fill = cell.fill && cell.fill.fgColor && cell.fill.fgColor.argb; if (fill && cell.fill.pattern === 'solid') st.push('background:#' + fill.slice(-6));
+      const font = cell.font || {}; if (font.bold) st.push('font-weight:bold'); if (font.color && font.color.argb) st.push('color:#' + font.color.argb.slice(-6)); if (font.size && font.size > 12) st.push('font-size:' + Math.min(font.size, 28) + 'px');
+      const al = cell.alignment || {}; if (al.horizontal) st.push('text-align:' + (al.horizontal === 'centerContinuous' ? 'center' : al.horizontal)); else if (typeof cell.value === 'number' || cell.value && cell.value.formula) st.push('text-align:right');
+      h += `<td${sp ? ` rowspan="${sp.rs}" colspan="${cols.filter(x => x >= c && x < c + sp.cs).length}"` : ''} style="${st.join(';')}">${esc(val(cell))}${(pics[k] || []).map(src => `<img src="${src}" alt="">`).join('')}</td>`;
+    }
+    h += '</tr>';
+  }
+  return h + '</tbody></table>';
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-xvs]'); if (b) { XV.sheet = b.dataset.xvs; renderXlViewer(); } });
+
+/* ---------- the Quotation tab: one quote, three ways of looking at it ----------
+   Excel version: the QUOTATION sheet (from the uploaded Excel, or as "Excel" would download it).
+   PDF version: the very PDF "Download PDF" makes. Spreadsheet version: the page layout. */
+let qMode = 'excel'; try { qMode = localStorage.getItem('qb.qmode') || 'excel'; } catch (e) { }
+let qRun = 0, qPdfUrl = '';
+async function showQuote() {
+  const run = ++qRun, sel = $('#qMode'); sel.value = qMode;
+  $('#qExcel').hidden = qMode !== 'excel'; $('#qPdf').hidden = qMode !== 'pdf'; $('#qSheet').style.display = qMode === 'sheet' ? '' : 'none';
+  const note = t => { if (run === qRun) $('#qNote').innerHTML = t; };
+  if (qMode === 'sheet') { note('The quotation laid out as a page. <b>Print</b> prints this.'); return; }
+  if (!activeRows().length) { const empty = '<div class="xv-empty"><p>Load an estimation or an edited Excel to see the quotation.</p></div>'; $('#qExcel').innerHTML = $('#qPdf').innerHTML = empty; note(''); return; }
+  if (qMode === 'excel') {
+    const up = XV.wb && XV.wb.getWorksheet('QUOTATION');
+    if (up) { $('#qExcel').innerHTML = `<div class="xv-wrap">${sheetTable(XV.wb, up)}</div>`; note(`The QUOTATION sheet from your uploaded Excel <b>${esc(XV.name)}</b>, exactly as it is in the file.`); return; }
+    note('Building the Excel version…');
+    for (let i = 0; i < 40 && !window.ExcelJS; i++) await new Promise(r => setTimeout(r, 250));
+    if (!window.ExcelJS) { note('Excel library still loading — try again in a moment.'); return; }
+    const wb = await buildWorkbook(); if (run !== qRun) return;
+    $('#qExcel').innerHTML = `<div class="xv-wrap">${sheetTable(wb, wb.getWorksheet('QUOTATION'))}</div>`;
+    note('The QUOTATION sheet exactly as the <b>Excel</b> button downloads it.');
+    return;
+  }
+  note('Building the PDF…');
+  try {
+    const doc = (S.pdfStyle || 'proposal') === 'proposal' ? await buildProposalPdf(false, S.pdfOrient || 'portrait') : await buildPdf(false);
+    if (run !== qRun) return;
+    if (qPdfUrl) URL.revokeObjectURL(qPdfUrl);
+    qPdfUrl = URL.createObjectURL(doc.output('blob'));
+    $('#qPdf').innerHTML = `<iframe src="${qPdfUrl}" title="Quotation PDF" style="width:100%;height:82vh;border:1px solid var(--line);background:#fff"></iframe>`;
+    note(`Exactly what <b>Download PDF</b> gives you (${(S.pdfStyle || 'proposal') === 'proposal' ? 'Proposal' : 'Spreadsheet'} style, set next to Download PDF).`);
+  } catch (e) { note('PDF failed: ' + esc(e.message || e)); }
+}
+$('#qMode').onchange = e => { qMode = e.target.value; try { localStorage.setItem('qb.qmode', qMode); } catch (err) { } showQuote(); };
+
 /* a dropped .xlsx: our own Excel has a QUOTE WORKING SHEET, anything else is a Logikal estimation */
 async function openSpreadsheet(file) {
   let ours = false;
@@ -1223,7 +1356,10 @@ document.addEventListener('click', e => {
   const act = t.closest('[data-act]');
   if (act) {
     const id = +act.closest('tr').dataset.id, i = state.rows.findIndex(r => r.id === id), row = state.rows[i], a = act.dataset.act;
-    if (a === 'del') { if (row.source === 'manual' || row.missing || confirm('Remove ' + (row.ref || 'this line') + ' from the quote? (It will come back if you re-load the estimation.)')) state.rows.splice(i, 1); }
+    if (a === 'del') {
+      if (row.source === 'manual' || row.missing) state.rows.splice(i, 1);
+      else { ask('Remove this line?', `Remove ${esc(row.ref || 'this line')} from the quote? It will come back if you re-load the estimation.`, 'Remove').then(ok => { if (ok) { state.rows.splice(state.rows.indexOf(row), 1); render(); } }); return; }
+    }
     if (a === 'up' && i > 0) [state.rows[i - 1], state.rows[i]] = [state.rows[i], state.rows[i - 1]];
     if (a === 'down' && i < state.rows.length - 1) [state.rows[i + 1], state.rows[i]] = [state.rows[i], state.rows[i + 1]];
     if (a === 'reset') { row.ov = {}; row.changes = []; row.isNew = false; row.extra = null; }
@@ -1253,6 +1389,8 @@ $('#tabs').addEventListener('click', e => {
   state.view = b.dataset.v;
   [...$('#tabs').children].forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('.view').forEach(v => { const on = v.id === 'view-' + state.view; v.style.display = on ? '' : 'none'; v.classList.toggle('print-on', on); });
+  if (state.view === 'xl') renderXlViewer();
+  if (state.view === 'quote') showQuote();
 });
 $('#fileInput').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadEstimationFile(f); e.target.value = ''; });
 const drop = $('#drop');
@@ -1264,8 +1402,8 @@ $('#addExtras').onclick = () => openExtras();
 $('#btnSettings').onclick = () => { renderSettings(); $('#drawer').classList.add('open'); $('#scrim').classList.add('on'); };
 const closeDrawer = () => { $('#drawer').classList.remove('open'); $('#scrim').classList.remove('on'); render(); };
 $('#closeDrawer').onclick = closeDrawer; $('#scrim').onclick = closeDrawer;
-$('#resetSettings').onclick = () => { if (!confirm('Reset all pricing, rules and wording to defaults?')) return; S = clone(DEFAULT_SETTINGS); saveSettings(); renderSettings(); render(); };
-$('#btnPrint').onclick = () => { if (state.view === 'work') { $('#tabs').querySelector('[data-v="quote"]').click(); } setTimeout(() => window.print(), 50); };
+$('#resetSettings').onclick = async () => { if (!await ask('Reset pricing & rules?', 'All pricing, rules and wording go back to the defaults.', 'Reset')) return; S = clone(DEFAULT_SETTINGS); saveSettings(); renderSettings(); render(); };
+$('#btnPrint').onclick = () => { if (state.view !== 'quote') { $('#tabs').querySelector('[data-v="quote"]').click(); } setTimeout(() => window.print(), 50); };
 
 /* ---------- extras: items that are not in the Logikal estimation (own section on the page) ---------- */
 const presetOv = p => ({ product: p.name, markup: Number(p.markup) || S.defaultMarkup, manDays: Number(p.manDays) || 0, cill: p.cill, trickle: p.trickle, handle: p.handle, glassSpec: p.glassSpec, config: p.config || '', glassCost: 0 });
@@ -1485,7 +1623,7 @@ async function openJob(f) {
     const j = JSON.parse(await f.text());
     if (j.app !== 'logikal-quote-builder') throw new Error('not a quote-builder job file');
     state.project = j.project; state.est = j.est; state.rows = j.rows; uid = Math.max(0, ...state.rows.map(r => r.id)) + 1;
-    if (j.settings && confirm('Use the pricing & rules saved with this job? (Cancel keeps your current settings.)')) { S = Object.assign(clone(DEFAULT_SETTINGS), j.settings); saveSettings(); }
+    if (j.settings && await ask('Pricing & rules', 'Use the pricing & rules saved with this job, or keep your current settings?', 'Use the job’s', 'Keep mine')) { S = Object.assign(clone(DEFAULT_SETTINGS), j.settings); saveSettings(); }
     banner('ok', 'Opened job “' + esc(f.name) + '”. Drop a revised estimation to update it.'); render();
   } catch (err) { banner('warn', 'Could not open job: ' + esc(err.message)); }
 }
@@ -1500,6 +1638,11 @@ function toPng(src) {
 }
 $('#btnExcel').onclick = async () => {
   if (!window.ExcelJS) { banner('warn', 'Excel library still loading — try again in a moment.'); return; }
+  const buf = await (await buildWorkbook()).xlsx.writeBuffer();
+  download(safeName(state.project.projectName) + ' ' + (state.project.version || 'Quotation') + '.xlsx', new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+};
+/* the workbook "Excel" downloads, also drawn on the Quotation tab's Excel version */
+async function buildWorkbook() {
   const lines = computeAll().filter(l => !l.row.missing), T = projectTotals(lines, S), P = state.project;
   const wb = new ExcelJS.Workbook(); wb.creator = 'Quote Builder';
   const ws = wb.addWorksheet('QUOTE WORKING SHEET', { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
@@ -1549,9 +1692,8 @@ $('#btnExcel').onclick = async () => {
   ws.views = [{ state: 'frozen', ySplit: H }];
   await addCustomerSheet(wb, 'QUOTATION', lines, T, false);
   await addCustomerSheet(wb, 'ORDER CONFIRMATION', lines, T, true);
-  const buf = await wb.xlsx.writeBuffer();
-  download(safeName(state.project.projectName) + ' ' + (state.project.version || 'Quotation') + '.xlsx', new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-};
+  return wb;
+}
 
 /* shared bits for the downloadable outputs */
 /* logo with its white background knocked out, so it sits on the grey banner like the template */
@@ -1679,8 +1821,8 @@ $('#pdfStyle').value = S.pdfStyle || 'proposal';
 $('#pdfOrient').value = S.pdfOrient || 'portrait';
 const syncPdfCtl = () => { $('#pdfOrient').disabled = $('#pdfStyle').value === 'sheet'; $('#pdfOrient').title = $('#pdfOrient').disabled ? 'The spreadsheet style is always landscape' : 'Page orientation'; };
 syncPdfCtl();
-$('#pdfStyle').onchange = e => { S.pdfStyle = e.target.value; saveSettings(); syncPdfCtl(); };
-$('#pdfOrient').onchange = e => { S.pdfOrient = e.target.value; saveSettings(); };
+$('#pdfStyle').onchange = e => { S.pdfStyle = e.target.value; saveSettings(); syncPdfCtl(); if (state.view === 'quote' && qMode === 'pdf') showQuote(); };
+$('#pdfOrient').onchange = e => { S.pdfOrient = e.target.value; saveSettings(); if (state.view === 'quote' && qMode === 'pdf') showQuote(); };
 
 /* ---------- cover picture ---------- */
 const COVER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
