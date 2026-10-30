@@ -261,6 +261,9 @@ table.ws .src b{color:var(--ink);font-weight:700}
 .xv td img{max-width:100%;max-height:120px;display:block;margin:0 auto}
 .xv-empty{background:#fff;border:1px solid var(--line);padding:40px 20px;text-align:center}
 .xv-empty p{color:var(--ink2);margin:0 0 14px}
+/* the Quotation and Excel sheet viewer tabs show one Download button; the working sheet shows the rest */
+body:not([data-view="quote"]):not([data-view="xl"]) #btnDl{display:none}
+body[data-view="quote"] .actions>:not(#btnDl),body[data-view="xl"] .actions>:not(#btnDl){display:none}
 .qmode{display:inline-flex;gap:8px;align-items:center;font-weight:bold;margin-right:12px}
 .qmode select{font:inherit;font-weight:normal;padding:6px 8px;border:1px solid var(--ink);background:#fff}
 #qExcel,#qPdf{margin-bottom:16px}
@@ -390,6 +393,7 @@ table.ws .src b{color:var(--ink);font-weight:700}
         <select id="pdfOrient" title="Page orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
         <button class="btn primary" id="btnPdf" title="Downloads the customer quotation — or the order confirmation if that tab is open">Download PDF</button>
       </div>
+      <button class="btn primary" id="btnDl" title="Downloads what you are looking at">Download</button>
     </div>
   </div>
 </div>
@@ -847,7 +851,7 @@ function resetJob() {
   state.project = { client: '', projectName: '', address: '', tel: '', quoteRef: '', date: todayStr(), installDate: '', version: 'Quotation V1' };
   state.est = null; state.rows = []; uid = 1;
   S.installOverride = ''; S.craneCost = 0; S.discountPct = DEFAULT_SETTINGS.discountPct; saveSettings();
-  $('#banners').innerHTML = ''; XV.wb = null;
+  $('#banners').innerHTML = ''; XV.wb = null; XV.file = null; syncDl();
 }
 /* a yes / no question asked in the page, not by the browser. Resolves true for yes. */
 function ask(title, html, yes = 'Yes', no = 'Cancel') {
@@ -938,7 +942,7 @@ async function loadEditedExcel(file) {
       if (isFinite(pct) && pct >= 0 && pct < 100) S.discountPct = Math.round(pct * 1e4) / 1e4;
     }
     saveSettings(); render();
-    Object.assign(XV, { wb, name: file.name, at: new Date().toLocaleString('en-GB'), sheet: 'QUOTE WORKING SHEET' }); renderXlViewer();
+    Object.assign(XV, { wb, file, name: file.name, at: new Date().toLocaleString('en-GB'), sheet: 'QUOTE WORKING SHEET' }); renderXlViewer(); syncDl();
     const T = projectTotals(computeAll().filter(l => !l.row.missing), S);
     done('Edited Excel loaded', `<b>${esc(P.projectName || 'Quote')}</b>: ${state.rows.length} lines from “${esc(file.name)}”, total <b>${gbp(T.total)}</b> + VAT.<br>Ready for the PDF. The PDF and Excel will be named “${esc(outName())}”.<br>See the file itself in the <b>Excel sheet viewer</b> tab.`);
   } catch (e) { banner('warn', 'Could not read “' + esc(file.name) + '”: ' + esc(e.message || e)); }
@@ -1019,7 +1023,7 @@ async function showQuote() {
   const run = ++qRun, sel = $('#qMode'); sel.value = qMode;
   $('#qExcel').hidden = qMode !== 'excel'; $('#qPdf').hidden = qMode !== 'pdf'; $('#qSheet').style.display = qMode === 'sheet' ? '' : 'none';
   const note = t => { if (run === qRun) $('#qNote').innerHTML = t; };
-  if (qMode === 'sheet') { note('The quotation laid out as a page. <b>Print</b> prints this.'); return; }
+  if (qMode === 'sheet') { note('The quotation laid out as a spreadsheet page. <b>Download PDF</b> gives it as a PDF.'); return; }
   if (!activeRows().length) { const empty = '<div class="xv-empty"><p>Load an estimation or an edited Excel to see the quotation.</p></div>'; $('#qExcel').innerHTML = $('#qPdf').innerHTML = empty; note(''); return; }
   if (qMode === 'excel') {
     const up = XV.wb && XV.wb.getWorksheet('QUOTATION');
@@ -1034,15 +1038,36 @@ async function showQuote() {
   }
   note('Building the PDF…');
   try {
-    const doc = (S.pdfStyle || 'proposal') === 'proposal' ? await buildProposalPdf(false, S.pdfOrient || 'portrait') : await buildPdf(false);
+    const doc = await buildProposalPdf(false, S.pdfOrient || 'portrait');
     if (run !== qRun) return;
     if (qPdfUrl) URL.revokeObjectURL(qPdfUrl);
     qPdfUrl = URL.createObjectURL(doc.output('blob'));
     $('#qPdf').innerHTML = `<iframe src="${qPdfUrl}" title="Quotation PDF" style="width:100%;height:82vh;border:1px solid var(--line);background:#fff"></iframe>`;
-    note(`Exactly what <b>Download PDF</b> gives you (${(S.pdfStyle || 'proposal') === 'proposal' ? 'Proposal' : 'Spreadsheet'} style, set next to Download PDF).`);
+    note('The PDF exactly as <b>Download PDF</b> gives it.');
   } catch (e) { note('PDF failed: ' + esc(e.message || e)); }
 }
-$('#qMode').onchange = e => { qMode = e.target.value; try { localStorage.setItem('qb.qmode', qMode); } catch (err) { } showQuote(); };
+$('#qMode').onchange = e => { qMode = e.target.value; try { localStorage.setItem('qb.qmode', qMode); } catch (err) { } syncDl(); showQuote(); };
+
+/* the one Download button on the Quotation and Excel sheet viewer tabs: it gives what is on screen */
+const dlKind = () => state.view === 'xl' || qMode === 'excel' ? 'excel' : qMode === 'pdf' ? 'pdf' : 'sheet';
+function syncDl() {
+  const k = dlKind(), b = $('#btnDl');
+  b.textContent = k === 'excel' ? 'Download Excel' : 'Download PDF';
+  b.title = k === 'excel' ? (XV.file ? 'Downloads the Excel you uploaded' : 'Downloads the Excel for this quote') : k === 'pdf' ? 'Downloads the PDF shown here' : 'Downloads this layout as a PDF';
+  b.style.display = state.view === 'xl' && !XV.file ? 'none' : '';
+}
+$('#btnDl').onclick = async () => {
+  const k = dlKind(), b = $('#btnDl'), label = b.textContent;
+  if (k === 'excel' && XV.file) { download(XV.file.name, XV.file); return; }
+  if (k === 'excel') return $('#btnExcel').click();
+  if (!window.jspdf || !window.jspdf.jsPDF || !window.jspdf.jsPDF.API.autoTable) { banner('warn', 'PDF library still loading — try again in a moment.'); return; }
+  b.disabled = true; b.textContent = 'Building PDF…';
+  try {
+    const doc = k === 'pdf' ? await buildProposalPdf(false, S.pdfOrient || 'portrait') : await buildPdf(false);
+    doc.save(outName() + '.pdf');
+  } catch (e) { banner('warn', 'PDF failed: ' + esc(e.message || e)); }
+  finally { b.disabled = false; b.textContent = label; }
+};
 
 /* a dropped .xlsx: our own Excel has a QUOTE WORKING SHEET, anything else is a Logikal estimation */
 async function openSpreadsheet(file) {
@@ -1389,6 +1414,7 @@ $('#tabs').addEventListener('click', e => {
   state.view = b.dataset.v;
   [...$('#tabs').children].forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('.view').forEach(v => { const on = v.id === 'view-' + state.view; v.style.display = on ? '' : 'none'; v.classList.toggle('print-on', on); });
+  document.body.dataset.view = state.view; syncDl();
   if (state.view === 'xl') renderXlViewer();
   if (state.view === 'quote') showQuote();
 });
