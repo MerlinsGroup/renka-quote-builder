@@ -997,12 +997,12 @@ function renderXlViewer() {
   const sheets = XV.wb.worksheets.filter(w => w.state !== 'hidden' && w.state !== 'veryHidden');
   const ws = sheets.find(w => w.name === XV.sheet) || sheets[0];
   const wrap = box.querySelector('.xv-wrap'), keep = wrap ? [wrap.scrollTop, wrap.scrollLeft] : null;
-  const canEdit = ws.name === 'QUOTE WORKING SHEET';
+  const custSheet = /^(QUOTATION|ORDER CONFIRMATION)$/.test(ws.name), canEdit = ws.name === 'QUOTE WORKING SHEET' || custSheet;
   box.innerHTML = `<div class="xv-bar"><div class="xv-tabs">${sheets.map(w => `<button data-xvs="${esc(w.name)}" class="${w === ws ? 'on' : ''}">${esc(w.name)}</button>`).join('')}</div>
     <button class="btn primary" data-dl>Download Excel</button>
-    <div class="f"><b>${esc(XV.name)}</b> · ${XV.file ? 'uploaded ' + esc(XV.at) + (XV.edited ? ' · <b>with your changes</b>' : '') : 'the Excel for this quote'} · ${canEdit ? 'click a cell outlined in blue to change it; the quote, totals and PDF follow.' : 'read only: change figures on the QUOTE WORKING SHEET.'}</div></div>
+    <div class="f"><b>${esc(XV.name)}</b> · ${XV.file ? 'uploaded ' + esc(XV.at) + (XV.edited ? ' · <b>with your changes</b>' : '') : 'the Excel for this quote'} · ${canEdit ? 'click a cell outlined in blue to change it; the quote, totals and PDF follow.' : 'read only.'}</div></div>
     <div class="xv-msg" id="xvMsg">${XV.msg || ''}</div>
-    <div class="xv-wrap">${sheetTable(XV.wb, ws, canEdit ? xvEditable(ws) : null)}</div>`;
+    <div class="xv-wrap">${sheetTable(XV.wb, ws, ws.name === 'QUOTE WORKING SHEET' ? xvEditable(ws) : custSheet ? custEditable(ws) : null)}</div>`;
   if (keep) { const w = box.querySelector('.xv-wrap'); w.scrollTop = keep[0]; w.scrollLeft = keep[1]; }
 }
 /* which cells of the working sheet can be changed here: each line's figures and words, and the
@@ -1024,9 +1024,59 @@ function xvEditable(ws) {
 }
 /* a cell changed in the viewer: written into the workbook, the quote rebuilt from it, and the
    workbook made again from the quote so every formula, total and sheet shows the new figures */
+/* the QUOTATION and ORDER CONFIRMATION sheets: one row per quote line under the FRAME NO. heading,
+   then the totals. Each column is a field of the line; the price is a typed price. */
+const CUST_FIELD = { 'LOCATION / REF': 'location', 'PRODUCT DESCRIPTION': 'product', 'FRAME WIDTH': 'width', 'FRAME HEIGHT': 'height', 'FRAME COLOUR': 'colour', 'CONFIGURATION': 'config', 'CILL': 'cill', 'HANDLE / LOCK COLOUR & LOCATION': 'handle', 'RETAIL PRICE (EXC VAT)': 'retailOverride', 'NON STANDARD GLASS SPECIFICATIONS': 'glassSpec', 'ADDITIONAL ELEMENTS / COSTS TO BE FINALISED POST SURVEY': 'additional' };
+function custLayout(ws) {
+  const txt = a => String(ws.getCell(a).value ?? '').replace(/\s+/g, ' ').trim();
+  let H = 0; for (let r = 1; r <= Math.min(ws.rowCount, 40); r++) if (/^FRAME NO/i.test(txt('A' + r))) { H = r; break; }
+  if (!H) return null;
+  const field = {}, n = activeRows().length;
+  for (let c = 1; c <= ws.columnCount; c++) { const h = String(ws.getRow(H).getCell(c).value ?? '').replace(/\s+/g, ' ').trim().toUpperCase(); const f = CUST_FIELD[h] || (/^TRICKLE VENTS/.test(h) ? 'trickle' : null); if (f) field[c] = f; }
+  const priceCol = +Object.keys(field).find(c => field[c] === 'retailOverride') || 0, totals = {};
+  for (let r = H + n + 1; r <= ws.rowCount; r++) {
+    const a = txt('A' + r).toUpperCase();
+    if (/^INSTALLATION COST/.test(a)) totals[r] = 'install'; else if (/^CRANE/.test(a)) totals[r] = 'crane'; else if (/^TOTAL PROJECT COST (\(INC INSTALLATION\)|\/ ORDER VALUE \(EXC VAT\))/.test(a)) totals[r] = 'total';
+  }
+  return { H, n, field, priceCol, totals };
+}
+function custEditable(ws) {
+  const L = custLayout(ws), ok = new Set(); if (!L) return ok;
+  for (let r = L.H + 1; r <= L.H + L.n; r++) Object.keys(L.field).forEach(c => ok.add(r + ':' + c));
+  if (L.priceCol) Object.keys(L.totals).forEach(r => ok.add(r + ':' + L.priceCol));
+  return ok;
+}
+async function custCommit(sheet, r, c, text) {
+  const wb = XV.wb, ws = wb.getWorksheet(sheet), L = custLayout(ws); if (!L) return;
+  const lines = computeAll().filter(l => !l.row.missing), money = num(text), what = [];
+  if (r > L.H && r <= L.H + L.n) {
+    const line = lines[r - L.H - 1], f = L.field[c]; if (!line || !f) return;
+    const ov = line.row.ov;
+    if (f === 'retailOverride') { if (text === '') delete ov.retailOverride; else if (money != null) ov.retailOverride = money; else return; }
+    else if (f === 'location') { const ref = line.row.ref || '', t = text.endsWith(' - ' + ref) ? text.slice(0, -(ref.length + 3)) : text === ref ? '' : text; ov.location = t.trim(); }
+    else ov[f] = (f === 'width' || f === 'height') && /^-?\d+(\.\d+)?$/.test(text) ? Number(text) : text;
+    what.push(`Frame ${line.v.frameNo}: ${String(ws.getRow(L.H).getCell(c).value).toLowerCase()} → “${text}”`);
+  } else if (L.totals[r]) {
+    const k = L.totals[r];
+    if (k === 'install') { S.installOverride = text === '' ? '' : money ?? S.installOverride; what.push(text === '' ? 'Installation back to the calculated figure' : `Installation → ${gbp(money)}`); }
+    if (k === 'crane') { S.craneCost = money || 0; what.push(`Crane → ${gbp(money || 0)}`); }
+    if (k === 'total' && money != null) {
+      const T = projectTotals(lines, S), pct = T.framesInc ? (1 - (money - T.crane - T.install) / T.framesInc) * 100 : NaN;
+      if (isFinite(pct) && pct >= 0 && pct < 100) { S.discountPct = Math.round(pct * 1e4) / 1e4; what.push(`Total → ${gbp(money)}: discount is now ${S.discountPct.toFixed(2)}%`); }
+      else what.push(`<span style="color:#b00">A total of ${gbp(money)} would need a ${pct < 0 ? 'negative discount' : 'discount of 100% or more'}, so it was not used.</span>`);
+    }
+    saveSettings();
+  } else return;
+  render(); await xvPrepare();
+  const T = projectTotals(computeAll().filter(l => !l.row.missing), S);
+  XV.msg = '✓ ' + what.join(' · ') + `. Quote updated: total ${gbp(T.total)} + VAT.`;
+  renderXlViewer();
+  syncDl();
+}
 async function xvCommit(td) {
   const [r, c] = td.dataset.xe.split(':').map(Number), text = td.innerText.trim();
   if (text === td.dataset.was) return;
+  if (td.dataset.xs && td.dataset.xs !== 'QUOTE WORKING SHEET') return custCommit(td.dataset.xs, r, c, text);
   const ws = XV.wb.getWorksheet('QUOTE WORKING SHEET'), cell = ws.getRow(r).getCell(c);
   const head = String(ws.getRow(12).getCell(c).value || ws.getCell('A' + r).value || ws.getCell('Y' + r).value || 'Cell').replace(/\s+/g, ' ').trim();
   const pctCell = /%/.test(cell.numFmt || '');
@@ -1097,7 +1147,7 @@ function sheetTable(wb, ws, editable) {
       const fill = cell.fill && cell.fill.fgColor && cell.fill.fgColor.argb; if (fill && cell.fill.pattern === 'solid') st.push('background:#' + fill.slice(-6));
       const font = cell.font || {}; if (font.bold) st.push('font-weight:bold'); if (font.color && font.color.argb) st.push('color:#' + font.color.argb.slice(-6)); if (font.size && font.size > 12) st.push('font-size:' + Math.min(font.size, 28) + 'px');
       const al = cell.alignment || {}; if (al.horizontal) st.push('text-align:' + (al.horizontal === 'centerContinuous' ? 'center' : al.horizontal)); else if (typeof cell.value === 'number' || cell.value && cell.value.formula) st.push('text-align:right');
-      const ed = editable && editable.has(k) ? ` class="xe" contenteditable="plaintext-only" spellcheck="false" data-xe="${k}"` : '';
+      const ed = editable && editable.has(k) ? ` class="xe" contenteditable="plaintext-only" spellcheck="false" data-xe="${k}" data-xs="${esc(ws.name)}"` : '';
       h += `<td${ed}${sp ? ` rowspan="${sp.rs}" colspan="${cols.filter(x => x >= c && x < c + sp.cs).length}"` : ''} style="${st.join(';')}">${esc(val(cell))}${(pics[k] || []).map(src => `<img src="${src}" alt="">`).join('')}</td>`;
     }
     h += '</tr>';
@@ -1118,14 +1168,12 @@ async function showQuote() {
   if (qMode === 'sheet') { note('The quotation laid out as a spreadsheet page. <b>Download PDF</b> gives it as a PDF.'); return; }
   if (!activeRows().length) { const empty = '<div class="xv-empty"><p>Load an estimation or an edited Excel to see the quotation.</p></div>'; $('#qExcel').innerHTML = $('#qPdf').innerHTML = empty; note(''); return; }
   if (qMode === 'excel') {
-    const up = XV.wb && XV.wb.getWorksheet('QUOTATION');
-    if (up) { $('#qExcel').innerHTML = `<div class="xv-wrap">${sheetTable(XV.wb, up)}</div>`; note(XV.edited ? `The QUOTATION sheet from <b>${esc(XV.name)}</b>, with the changes made in the Excel sheet viewer.` : `The QUOTATION sheet from your uploaded Excel <b>${esc(XV.name)}</b>, exactly as it is in the file.`); return; }
-    note('Building the Excel version…');
-    for (let i = 0; i < 40 && !window.ExcelJS; i++) await new Promise(r => setTimeout(r, 250));
-    if (!window.ExcelJS) { note('Excel library still loading — try again in a moment.'); return; }
-    const wb = await buildWorkbook(); if (run !== qRun) return;
-    $('#qExcel').innerHTML = `<div class="xv-wrap">${sheetTable(wb, wb.getWorksheet('QUOTATION'))}</div>`;
-    note('The QUOTATION sheet exactly as the <b>Excel</b> button downloads it.');
+    if (!$('#qExcel .xv-wrap')) note('Making the Excel version…');
+    await xvPrepare(); if (run !== qRun || !XV.wb) return;
+    const ws = XV.wb.getWorksheet('QUOTATION'), old = $('#qExcel .xv-wrap'), keep = old ? [old.scrollTop, old.scrollLeft] : null;
+    $('#qExcel').innerHTML = `<div class="xv-wrap">${sheetTable(XV.wb, ws)}</div>`;
+    if (keep) { const w = $('#qExcel .xv-wrap'); w.scrollTop = keep[0]; w.scrollLeft = keep[1]; }
+    note(`The QUOTATION sheet of <b>${esc(XV.name)}</b>${XV.file && !XV.edited ? ', exactly as uploaded' : ''}. To change it, use the <b>Excel sheet viewer</b> tab.`);
     return;
   }
   note('Building the PDF…');
