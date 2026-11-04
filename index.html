@@ -346,14 +346,44 @@ body[data-view="quote"] .actions,body[data-view="xl"] .actions{display:none}
     <span class="login__foot">Quotation portal</span>
   </div>
   <div class="login__panel">
-    <form class="login__form" id="loginForm">
+    <form class="login__form" id="paneSignIn" novalidate hidden>
       <h1>Sign in</h1>
       <p>Renka quotation portal</p>
-      <p class="login__err" id="loginErr" hidden></p>
-      <label class="fld">Email<input type="email" id="loginEmail" autocomplete="username" spellcheck="false"></label>
-      <label class="fld">Password<input type="password" id="loginPass" autocomplete="current-password"></label>
+      <p class="login__err" hidden></p>
+      <label class="fld">Email<input type="email" id="loginEmail" autocomplete="username" spellcheck="false" required></label>
+      <label class="fld">Password<input type="password" id="loginPass" autocomplete="current-password" required></label>
       <button class="btn primary" type="submit">Sign in</button>
-      <p class="login__note">Local build. Credentials are held in this page, so this gate keeps the portal tidy rather than secure: replace it with real authentication before the portal is hosted anywhere.</p>
+      <p class="login__note"><button class="linkbtn" type="button" data-pane="paneForgot">Forgotten your password?</button></p>
+    </form>
+    <form class="login__form" id="paneSetPw" novalidate hidden>
+      <h1 id="setPwTitle">Set your password</h1>
+      <p id="setPwLede">Welcome. Before you continue, replace the temporary password you were given with one only you know.</p>
+      <p class="login__err" hidden></p>
+      <label class="fld"><span id="setPwCurLabel">Temporary password</span><input type="password" id="pwCur" autocomplete="current-password" required></label>
+      <label class="fld">New password<input type="password" id="pwNew" autocomplete="new-password" minlength="10" required></label>
+      <label class="fld">Confirm new password<input type="password" id="pwNew2" autocomplete="new-password" required></label>
+      <button class="btn primary" type="submit">Save password</button>
+      <p class="login__note">At least 10 characters. <button class="linkbtn" type="button" id="setPwCancel" hidden>Cancel</button></p>
+    </form>
+    <form class="login__form" id="paneForgot" novalidate hidden>
+      <h1>Reset password</h1>
+      <p>Enter your email and we will send you a link to choose a new password.</p>
+      <p class="login__err" hidden></p>
+      <div id="forgotAsk">
+        <label class="fld">Email<input type="email" id="forgotEmail" autocomplete="username" spellcheck="false" required></label>
+        <button class="btn primary" type="submit">Email me a link</button>
+      </div>
+      <p class="login__note" id="forgotSent" hidden>If that email has an account, a link is on its way. It works for 30 minutes. Check your junk folder if it has not arrived in a few minutes.</p>
+      <p class="login__note"><button class="linkbtn" type="button" data-pane="paneSignIn">Back to sign in</button></p>
+    </form>
+    <form class="login__form" id="paneReset" novalidate hidden>
+      <h1>Choose a new password</h1>
+      <p>This signs you out on any other device.</p>
+      <p class="login__err" hidden></p>
+      <label class="fld">New password<input type="password" id="resetNew" autocomplete="new-password" minlength="10" required></label>
+      <label class="fld">Confirm new password<input type="password" id="resetNew2" autocomplete="new-password" required></label>
+      <button class="btn primary" type="submit">Save password</button>
+      <p class="login__note">At least 10 characters. <button class="linkbtn" type="button" data-pane="paneForgot">Need a new link?</button></p>
     </form>
   </div>
 </div>
@@ -368,6 +398,8 @@ body[data-view="quote"] .actions,body[data-view="xl"] .actions{display:none}
       <span class="who__av" id="whoAvatar" aria-hidden="true"></span>
       <span class="who__email" id="whoEmail"></span>
       <span class="rule rule--who" aria-hidden="true"></span>
+      <a class="linkbtn" id="openLog" href="log.html" style="text-decoration:none">Log</a>
+      <button class="linkbtn" id="changePw" type="button">Password</button>
       <button class="linkbtn" id="signOut" type="button">Sign out</button>
     </span>
   </div>
@@ -1956,35 +1988,92 @@ async function addCustomerSheet(wb, name, lines, T, isOrder) {
   ws.pageSetup.printTitlesRow = `${H}:${H}`;
 }
 
-/* ---------- sign in (same gate as the Renka portal) ----------
-   This is a gate, not security. Passwords are stored as SHA-256 of "email:password" so they
-   cannot be read from the page source, but a short password can still be guessed from its hash.
-   Replace signIn() with a real authentication call for anything sensitive.
-   To add a user: node -e "console.log(require('crypto').createHash('sha256').update('email:password').digest('hex'))" */
-const LOCAL_ACCOUNTS = [
-  { email: 'prabjot@merlinsgroup.co.uk', hash: '86c7fb8ca988f3beb1a3007cfd5920280958e0b7b75be96b8963df3512033f6e' },
-  { email: 'mark@renka.co.uk', hash: '3ff2b16d41d81915ca7b2b6c4f1283921787a7f38c6a665abdac71c55f74b5bd' }
-];
-async function sha256hex(s) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
+/* ---------- sign in ----------
+   Accounts live on the server, not in this page: the Cloudflare back end at
+   AUTH_API checks passwords (stored there as PBKDF2 hashes), forces a new
+   password on first sign-in, emails reset links and keeps the Log.
+   Source and account tools: logikalsystem/cloudflare (_worker.js, users.mjs).
+   The session token is kept in sessionStorage for this tab. */
+const AUTH_API = /(^|\.)renka-portal\.pages\.dev$/.test(location.hostname) ? '' : 'https://renka-portal.pages.dev';
+const AUTH_KEY = 'renka.session';
+let RESET_TOKEN = '';
+function authToken() { try { return sessionStorage.getItem(AUTH_KEY) || ''; } catch (e) { return ''; } }
+function setAuthToken(t) { try { t ? sessionStorage.setItem(AUTH_KEY, t) : sessionStorage.removeItem(AUTH_KEY); } catch (e) { } }
+async function authApi(path, body) {
+  const h = {}; if (body) h['content-type'] = 'application/json';
+  const t = authToken(); if (t) h.authorization = 'Bearer ' + t;
+  let r;
+  try { r = await fetch(AUTH_API + path, { method: body ? 'POST' : 'GET', headers: h, body: body ? JSON.stringify(body) : undefined }); }
+  catch (e) { const x = new Error('Cannot reach the sign-in service. Check your connection and try again.'); x.status = 0; throw x; }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const x = new Error(j.error || 'Something went wrong. Try again.'); x.status = r.status; throw x; }
+  return j;
+}
 function showIdentity(email) { $('#whoEmail').textContent = email; $('#whoAvatar').textContent = String(email).trim().charAt(0); }
-async function signIn(email, password) {
-  const e = String(email).trim().toLowerCase(), acct = LOCAL_ACCOUNTS.find(a => a.email === e);
-  if (!acct || !window.crypto || !crypto.subtle || await sha256hex(e + ':' + String(password)) !== acct.hash) return false;
-  try { sessionStorage.setItem('renka.signedin', acct.email); } catch (e) { }
-  document.body.classList.remove('locked'); showIdentity(acct.email); return true;
+function showPane(id) {
+  ['paneSignIn', 'paneSetPw', 'paneForgot', 'paneReset'].forEach(p => { $('#' + p).hidden = p !== id; });
+  document.querySelectorAll('#login .login__err').forEach(e => { e.hidden = true; });
+  document.querySelectorAll('#login button[type=submit]').forEach(b => { b.disabled = false; });
+  const f = $('#' + id + ' input'); if (f) setTimeout(() => f.focus(), 0);
+}
+function authFail(form, msg) { const e = form.querySelector('.login__err'); e.textContent = msg; e.hidden = false; form.querySelector('button[type=submit]').disabled = false; }
+function lockApp(pane) { document.body.classList.add('locked'); showPane(pane || 'paneSignIn'); }
+function unlockApp(email) { document.body.classList.remove('locked'); showIdentity(email); }
+function askForPassword(forced) {
+  $('#setPwTitle').textContent = forced ? 'Set your password' : 'Change password';
+  $('#setPwLede').textContent = forced ? 'Welcome. Before you continue, replace the temporary password you were given with one only you know.' : 'Choose a new password. This signs you out on any other device.';
+  $('#setPwCurLabel').textContent = forced ? 'Temporary password' : 'Current password';
+  $('#setPwCancel').hidden = forced;
+  ['#pwCur', '#pwNew', '#pwNew2'].forEach(s => { $(s).value = ''; });
+  lockApp('paneSetPw');
+}
+function signedIn(r) {
+  setAuthToken(r.token);
+  ['#loginPass', '#pwCur', '#pwNew', '#pwNew2', '#resetNew', '#resetNew2'].forEach(s => { $(s).value = ''; });
+  if (r.mustChange) askForPassword(true); else unlockApp(r.email);
 }
 (function initGate() {
-  let s = null; try { s = sessionStorage.getItem('renka.signedin'); } catch (e) { }
-  if (LOCAL_ACCOUNTS.some(a => a.email === s)) { document.body.classList.remove('locked'); showIdentity(s); } else document.body.classList.add('locked');
-  $('#loginForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    if (await signIn($('#loginEmail').value, $('#loginPass').value)) { $('#loginErr').hidden = true; $('#loginPass').value = ''; }
-    else { $('#loginErr').textContent = 'That email and password do not match.'; $('#loginErr').hidden = false; $('#loginPass').select(); }
+  document.querySelectorAll('#login [data-pane]').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.pane === 'paneForgot') { $('#forgotAsk').hidden = false; $('#forgotSent').hidden = true; $('#forgotEmail').value = $('#loginEmail').value; }
+    showPane(b.dataset.pane);
+  }));
+  $('#paneSignIn').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.currentTarget; f.querySelector('button[type=submit]').disabled = true;
+    try { signedIn(await authApi('/api/login', { email: $('#loginEmail').value, password: $('#loginPass').value })); }
+    catch (x) { authFail(f, x.message); $('#loginPass').select(); }
   });
-  $('#signOut').addEventListener('click', () => {
-    try { sessionStorage.removeItem('renka.signedin'); } catch (e) { }
-    document.body.classList.add('locked'); $('#loginPass').value = ''; $('#loginErr').hidden = true; $('#loginEmail').focus();
+  $('#paneSetPw').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.currentTarget; f.querySelector('button[type=submit]').disabled = true;
+    if ($('#pwNew').value !== $('#pwNew2').value) return authFail(f, 'The two new passwords do not match.');
+    try { signedIn(await authApi('/api/change-password', { current: $('#pwCur').value, next: $('#pwNew').value })); }
+    catch (x) { if (x.status === 401) { setAuthToken(''); lockApp(); } else authFail(f, x.message); }
   });
+  $('#setPwCancel').addEventListener('click', () => unlockApp($('#whoEmail').textContent));
+  $('#paneForgot').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.currentTarget; f.querySelector('button[type=submit]').disabled = true;
+    try { await authApi('/api/forgot', { email: $('#forgotEmail').value }); $('#forgotAsk').hidden = true; $('#forgotSent').hidden = false; }
+    catch (x) { authFail(f, x.message); }
+  });
+  $('#paneReset').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.currentTarget; f.querySelector('button[type=submit]').disabled = true;
+    if ($('#resetNew').value !== $('#resetNew2').value) return authFail(f, 'The two new passwords do not match.');
+    try { signedIn(await authApi('/api/reset', { token: RESET_TOKEN, next: $('#resetNew').value })); RESET_TOKEN = ''; }
+    catch (x) { authFail(f, x.message); }
+  });
+  $('#changePw').addEventListener('click', () => askForPassword(false));
+  $('#signOut').addEventListener('click', () => { setAuthToken(''); $('#loginPass').value = ''; lockApp(); });
+
+  // a reset link from an email: ?reset=<token>
+  const q = new URLSearchParams(location.search);
+  if (q.get('reset')) {
+    RESET_TOKEN = q.get('reset'); q.delete('reset');
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);   // keep the token out of history
+    setAuthToken(''); return lockApp('paneReset');
+  }
+  if (!authToken()) return lockApp();
+  document.body.classList.add('locked');      // brand panel only, while the session is checked
+  authApi('/api/me').then(me => { if (me.mustChange) askForPassword(true); else unlockApp(me.email); })
+    .catch(x => { if (x.status === 401 || x.status === 403) setAuthToken(''); lockApp(); if (x.status === 0) authFail($('#paneSignIn'), x.message); });
 })();
 
 /* ---------- PDF options ---------- */
