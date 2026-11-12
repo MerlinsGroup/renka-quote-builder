@@ -52,6 +52,12 @@ label.fld{display:block;font-size:10.5px;letter-spacing:.13em;text-transform:upp
 label.fld input{display:block;width:100%;margin-top:6px;font-size:14px;color:var(--ink);padding:10px 11px;border:1px solid var(--line);border-radius:2px;background:#fff}
 label.fld input:focus{border-color:var(--ink);outline:none}
 .login__form .btn{width:100%;padding:13px;margin-top:6px;font-size:14px}
+#noPaste{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(20,22,24,.55)}
+#noPaste[hidden]{display:none}
+.nopaste__box{width:100%;max-width:390px;background:#fff;border-top:4px solid #9b2c2c;border-radius:3px;padding:22px 24px;box-shadow:0 12px 40px rgba(0,0,0,.28);font-size:14px;line-height:1.55;color:var(--soft)}
+.nopaste__t{margin:0 0 8px;font-size:17px;font-weight:700;color:var(--ink)}
+.nopaste__box p{margin:0 0 8px}
+.nopaste__box button{appearance:none;margin-top:10px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--ink);border-radius:2px;background:var(--ink);color:#fff;padding:10px 20px}
 .login__err{margin:0 0 16px;font-size:13px;color:var(--ink);border-left:2px solid var(--ink);padding:7px 0 7px 12px;background:#e9e8e4}
 .login__note{margin:22px 0 0;font-size:11.5px;line-height:1.6;color:var(--greige)}
 
@@ -2266,6 +2272,29 @@ function showPane(id) {
   const f = $('#' + id + ' input'); if (f) setTimeout(() => f.focus(), 0);
 }
 function authFail(form, msg) { const e = form.querySelector('.login__err'); e.textContent = msg; e.hidden = false; form.querySelector('button[type=submit]').disabled = false; }
+/* Passwords must be typed. Pasting is blocked because a copied password usually
+   brings a hidden space or line break with it and then does not match. */
+function noPastePopup(field) {
+  let d = document.getElementById('noPaste');
+  if (!d) {
+    d = document.createElement('div'); d.id = 'noPaste'; d.hidden = true;
+    d.setAttribute('role', 'alertdialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-labelledby', 'noPasteT');
+    d.innerHTML = '<div class="nopaste__box"><p class="nopaste__t" id="noPasteT">Please type your password</p>'
+      + '<p>Copying and pasting is switched off for passwords. A copied password often carries a hidden space, so it will not match.</p>'
+      + '<p>Type it in with your keyboard instead. Capital letters and dashes count.</p>'
+      + '<button type="button">OK, I will type it</button></div>';
+    const close = () => { d.hidden = true; if (d._field) d._field.focus(); };
+    d.querySelector('button').addEventListener('click', close);
+    d.addEventListener('click', e => { if (e.target === d) close(); });
+    d.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    document.body.appendChild(d);
+  }
+  d._field = field; d.hidden = false;
+  setTimeout(() => d.querySelector('button').focus(), 0);
+}
+document.querySelectorAll('#login input[type=password]').forEach(i => {
+  ['paste', 'drop'].forEach(ev => i.addEventListener(ev, e => { e.preventDefault(); noPastePopup(i); }));
+});
 function lockApp(pane) { document.body.classList.add('locked'); showPane(pane || 'paneSignIn'); }
 function unlockApp(email) { document.body.classList.remove('locked'); showIdentity(email); }
 function askForPassword(forced) {
